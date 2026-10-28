@@ -1,0 +1,28 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# Flutter / Dart
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Personal docker-compose tweaks
+docker-compose.override.yml
