@@ -1,0 +1,6 @@
+### with token
+GET http://localhost:5080/currencies
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6Im5hcmVraWkiLCJzdWIiOiJuYXJla2lpIiwianRpIjoiMjg1YzllMGUiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjUwODAiLCJuYmYiOjE3OTMxMjk3NDgsImV4cCI6MTgwMTA3ODU0OCwiaWF0IjoxNzkzMTI5NzQ4LCJpc3MiOiJkb3RuZXQtdXNlci1qd3RzIn0.Qdi7S0JyrZcXILyelgKkIHSPT_0FVjHTK1PAeXXOQVY
+
+### without token
+GET http://localhost:5080/currencies
