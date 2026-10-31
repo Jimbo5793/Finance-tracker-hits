@@ -8,7 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace FinancialApp.API.Tests;
 
 /// <summary>GET /wallets — one test per check in the task, plus sorting.</summary>
-public class WalletsEndpointTests(ApiFactory api) : IClassFixture<ApiFactory>
+[Collection(ApiCollection.Name)]
+public class WalletsEndpointTests(ApiFactory api)
 {
     [Fact]
     public async Task NewUser_GetsEmptyList()
