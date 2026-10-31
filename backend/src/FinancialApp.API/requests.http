@@ -13,3 +13,26 @@ Authorization: Bearer <token>
 
 ### wallets without token (401)
 GET http://localhost:5080/wallets
+
+### create a wallet
+POST http://localhost:5080/wallets
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Euro card",
+  "type": "bank card",
+  "currency": "EUR",
+  "startingBalance": 100
+}
+
+### create a wallet without a name (gets "Cash #1", "Cash #2", ...)
+POST http://localhost:5080/wallets
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "type": "cash",
+  "currency": "RUB",
+  "startingBalance": 5000
+}

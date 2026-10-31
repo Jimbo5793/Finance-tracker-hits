@@ -1,4 +1,5 @@
 using FinancialApp.DB;
+using FinancialApp.DB.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -44,6 +45,23 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.Scheme, _ => { }));
     }
 
+    public async Task<int> CreateUserAsync()
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = new User { Email = $"{Guid.NewGuid():N}@test.local" };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+        return user.Id;
+    }
+
+    /// <summary>Runs a query against the test database, e.g. to check what was saved.</summary>
+    public async Task<T> QueryDbAsync<T>(Func<AppDbContext, Task<T>> query)
+    {
+        using var scope = Services.CreateScope();
+        return await query(scope.ServiceProvider.GetRequiredService<AppDbContext>());
+    }
+
     public HttpClient ClientFor(string? userId)
     {
         var client = CreateClient();
@@ -51,4 +69,11 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             client.DefaultRequestHeaders.Add(TestAuthHandler.UserHeader, userId);
         return client;
     }
+}
+
+/// <summary>All test classes marked [Collection(ApiCollection.Name)] share one ApiFactory (one database).</summary>
+[CollectionDefinition(Name)]
+public class ApiCollection : ICollectionFixture<ApiFactory>
+{
+    public const string Name = "api";
 }
