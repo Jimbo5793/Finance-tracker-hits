@@ -8,6 +8,7 @@ public static class DalServiceExtensions
     public static IServiceCollection AddDataAccess(this IServiceCollection services)
     {
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+        services.AddScoped<IWalletRepository, WalletRepository>();
         return services;
     }
 }

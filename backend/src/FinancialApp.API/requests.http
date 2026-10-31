@@ -4,3 +4,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6I
 
 ### without token
 GET http://localhost:5080/currencies
+
+### wallets of the logged-in user
+# The token's name must be the user's numeric id, e.g.:
+#   dotnet user-jwts create --name 10000001 --project src/FinancialApp.API
+GET http://localhost:5080/wallets
+Authorization: Bearer <token>
+
+### wallets without token (401)
+GET http://localhost:5080/wallets

@@ -51,3 +51,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Lets the integration tests start the app (WebApplicationFactory<Program>).
+public partial class Program { }
