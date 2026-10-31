@@ -10,6 +10,8 @@ public static class BllServiceExtensions
     {
         services.AddDataAccess();
         services.AddScoped<ICurrencyService, CurrencyService>();
+        services.AddScoped<IWalletService, WalletService>();
+        services.AddSingleton<IWalletBalanceCalculator, WalletBalanceCalculator>();
         return services;
     }
 }
