@@ -19,6 +19,12 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
+    c.MapType<System.Text.Json.JsonElement>(() => new OpenApiSchema
+    {
+        Type = JsonSchemaType.Number,
+        Format = "decimal"
+    });
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Type = SecuritySchemeType.Http,
