@@ -25,8 +25,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- App: http://localhost:8080
-- API: http://localhost:5000/api/health
+- App: http://localhost:3000
+- API: http://localhost:5000
 - Database: localhost:5432 (login details are in your `.env`)
 
 `Ctrl+C` stops it. `docker compose down -v` stops it and wipes your local database.
@@ -75,4 +75,8 @@ Run them before you push. GitHub Actions runs them anyway on every push and PR, 
 
 | Name | Role |
 |------|------|
-|      |      |
+|   Muhammad Dzaky Taufiqurrahman   |  Frontend    |
+|   Bima Prayoga Miftachul Rahmat   |  Backend    |
+|   Muhammad Hanif Fakhriansyah   |  Frontend    |
+|   Omar Shinichi Ghifari   |  UI/UX    |
+

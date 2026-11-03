@@ -56,8 +56,16 @@ else
 }
 builder.Services.AddAuthorization();
 builder.Services.AddBusiness();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins("http://localhost:3000")
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
 
 var app = builder.Build();
+
 
 if (authDisabled)
     app.Logger.LogWarning("AUTH IS DISABLED (Auth:Disabled=true). Every request runs as the dev user. Never use this in production.");
@@ -81,6 +89,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
