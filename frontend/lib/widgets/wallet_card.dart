@@ -10,7 +10,15 @@ const double walletCardHeight = 246;
 
 class WalletCard extends StatelessWidget {
   final Wallet wallet;
-  const WalletCard({super.key, required this.wallet});
+  final double? width;
+  final bool highlighted;
+
+  const WalletCard({
+    super.key,
+    required this.wallet,
+    this.width,
+    this.highlighted = false,
+  });
 
   static final _money = NumberFormat('#,##0.00', 'en_US');
 
@@ -52,13 +60,15 @@ class WalletCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: walletCardWidth,
+      width: width ?? walletCardWidth,
       height: walletCardHeight,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: highlighted ? AppColors.successBorder : AppColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
