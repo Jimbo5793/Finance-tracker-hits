@@ -38,6 +38,24 @@ class AppColors {
   // Card details
   static const currencyDot = Color(0xFFA8D5BA);
 
+  // Dialog and form
+  static const scrim = Color(0x5B10241C);
+  static const fieldBorder = Color(0xFFD9DFDB);
+  static const fieldBorderFocused = Color(0xFF193D32);
+  static const hint = Color(0xFF98A39E);
+  static const menuSelected = Color(0xFFE6F0EA);
+  static const buttonDisabled = Color(0xFFE1E9E3);
+  static const buttonDisabledText = Color(0xFF6B7B74);
+
+  // Form errors
+  static const errorText = Color(0xFFB42318);
+  static const errorBorder = Color(0xFFE5736C);
+  static const errorBannerBackground = Color(0xFFFEF1EF);
+
+  // Success
+  static const successBanner = Color(0xFFE6F0EA);
+  static const successBorder = Color(0xFFA8D5BA);
+
   // Skeleton
   static const skeleton = Color(0xFFE8EDE9);
 }
