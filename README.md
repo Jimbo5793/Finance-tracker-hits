@@ -77,6 +77,7 @@ Run them before you push. GitHub Actions runs them anyway on every push and PR, 
 |------|------|
 |   Muhammad Dzaky Taufiqurrahman   |  Frontend    |
 |   Bima Prayoga Miftachul Rahmat   |  Backend    |
+|   Hamza Rasheed Chattha   |  Backend    |
 |   Muhammad Hanif Fakhriansyah   |  Frontend    |
 |   Omar Shinichi Ghifari   |  UI/UX    |
 
