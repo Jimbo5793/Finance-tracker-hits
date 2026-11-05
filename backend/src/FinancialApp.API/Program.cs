@@ -1,5 +1,8 @@
-﻿using FinancialApp.BLL;
+﻿using FinancialApp.API.Auth;
+using FinancialApp.BLL;
 using FinancialApp.DB;
+using FinancialApp.DB.Entities;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +19,12 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
+    c.MapType<System.Text.Json.JsonElement>(() => new OpenApiSchema
+    {
+        Type = JsonSchemaType.Number,
+        Format = "decimal"
+    });
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Type = SecuritySchemeType.Http,
@@ -33,12 +42,38 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
-builder.Services.AddAuthentication().AddJwtBearer();
+var authDisabled = builder.Configuration.GetValue<bool>("Auth:Disabled");
 
+if (authDisabled)
+{
+    builder.Services
+        .AddAuthentication(DevAuthHandler.Scheme)
+        .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.Scheme, null);
+}
+else
+{
+    builder.Services.AddAuthentication().AddJwtBearer();
+}
 builder.Services.AddAuthorization();
 builder.Services.AddBusiness();
 
 var app = builder.Build();
+
+if (authDisabled)
+    app.Logger.LogWarning("AUTH IS DISABLED (Auth:Disabled=true). Every request runs as the dev user. Never use this in production.");
+
+if (builder.Configuration.GetValue<bool>("Database:AutoMigrate"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+
+    if (authDisabled && !await db.Users.AnyAsync(u => u.Email == "dev@local.test"))
+    {
+        db.Users.Add(new User { Email = "dev@local.test" });
+        await db.SaveChangesAsync();
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {
