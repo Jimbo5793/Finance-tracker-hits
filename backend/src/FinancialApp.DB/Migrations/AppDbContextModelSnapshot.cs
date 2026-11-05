@@ -31,6 +31,56 @@ namespace FinancialApp.DB.Migrations
                 .StartsAt(11000001L)
                 .HasMax(11999999L);
 
+            modelBuilder.Entity("FinancialApp.DB.Entities.AuditLogEntry", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("integer")
+                        .HasColumnName("entity_id");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("entity_type");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("EntityType", "EntityId")
+                        .HasDatabaseName("ix_audit_log_entity");
+
+                    b.ToTable("audit_log", (string)null);
+                });
+
             modelBuilder.Entity("FinancialApp.DB.Entities.Currency", b =>
                 {
                     b.Property<string>("Code")
@@ -185,6 +235,17 @@ namespace FinancialApp.DB.Migrations
 
                             t.HasCheckConstraint("ck_wallets_type", "type IN ('cash', 'bank card', 'PayPal', 'e-wallet', 'savings')");
                         });
+                });
+
+            modelBuilder.Entity("FinancialApp.DB.Entities.AuditLogEntry", b =>
+                {
+                    b.HasOne("FinancialApp.DB.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FinancialApp.DB.Entities.Wallet", b =>
