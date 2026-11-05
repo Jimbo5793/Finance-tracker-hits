@@ -5,4 +5,7 @@
     <Project Path="src/FinancialApp.DAL/FinancialApp.DAL.csproj" />
     <Project Path="src/FinancialApp.DB/FinancialApp.DB.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FinancialApp.API.Tests/FinancialApp.API.Tests.csproj" />
+  </Folder>
 </Solution>
