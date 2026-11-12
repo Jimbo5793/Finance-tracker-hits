@@ -13,6 +13,8 @@ public class CategoryConfig : IEntityTypeConfiguration<Category>
             t.HasCheckConstraint("ck_categories_id_range",
                 $"id BETWEEN {IdRanges.CategoriesStart} AND {IdRanges.CategoriesEnd}");
             t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 50");
+            var kinds = string.Join(", ", CategoryKinds.All.Select(k => $"'{k}'"));
+            t.HasCheckConstraint("ck_categories_kind", $"kind IN ({kinds})");
         });
 
         b.HasKey(c => c.Id);
@@ -20,8 +22,9 @@ public class CategoryConfig : IEntityTypeConfiguration<Category>
         b.Property(c => c.UserId).HasColumnName("user_id");
         b.Property(c => c.Name).HasColumnName("name").HasColumnType("citext").IsRequired();
         b.Property(c => c.Icon).HasColumnName("icon").HasMaxLength(50).IsRequired();
+        b.Property(c => c.Kind).HasColumnName("kind").HasMaxLength(10).IsRequired()
+            .HasDefaultValue(CategoryKinds.Expense);
 
         b.HasOne(c => c.User).WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.Restrict);
-        b.HasIndex(c => new { c.UserId, c.Name }).IsUnique().HasDatabaseName("ux_categories_user_name");
-    }
+        b.HasIndex(c => new { c.UserId, c.Kind, c.Name }).IsUnique().HasDatabaseName("ux_categories_user_kind_name");    }
 }

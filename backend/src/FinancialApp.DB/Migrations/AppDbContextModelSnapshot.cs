@@ -101,6 +101,14 @@ namespace FinancialApp.DB.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("icon");
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("expense")
+                        .HasColumnName("kind");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("citext")
@@ -112,13 +120,15 @@ namespace FinancialApp.DB.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "Name")
+                    b.HasIndex("UserId", "Kind", "Name")
                         .IsUnique()
-                        .HasDatabaseName("ux_categories_user_name");
+                        .HasDatabaseName("ux_categories_user_kind_name");
 
                     b.ToTable("categories", null, t =>
                         {
                             t.HasCheckConstraint("ck_categories_id_range", "id BETWEEN 12000001 AND 12999999");
+
+                            t.HasCheckConstraint("ck_categories_kind", "kind IN ('income', 'expense')");
 
                             t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 50");
                         });
