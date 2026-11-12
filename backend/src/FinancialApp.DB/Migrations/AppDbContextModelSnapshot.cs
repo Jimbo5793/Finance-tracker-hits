@@ -27,6 +27,10 @@ namespace FinancialApp.DB.Migrations
                 .StartsAt(12000001L)
                 .HasMax(12999999L);
 
+            modelBuilder.HasSequence<int>("operations_id_seq")
+                .StartsAt(13000001L)
+                .HasMax(13999999L);
+
             modelBuilder.HasSequence<int>("users_id_seq")
                 .StartsAt(10000001L)
                 .HasMax(10999999L);
@@ -130,7 +134,7 @@ namespace FinancialApp.DB.Migrations
 
                             t.HasCheckConstraint("ck_categories_kind", "kind IN ('income', 'expense')");
 
-                            t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 50");
+                            t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 30");
                         });
                 });
 
@@ -187,6 +191,51 @@ namespace FinancialApp.DB.Migrations
                             Code = "IDR",
                             Name = "Indonesian Rupiah",
                             Symbol = "Rp"
+                        });
+                });
+
+            modelBuilder.Entity("FinancialApp.DB.Entities.Operation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("nextval('operations_id_seq')");
+
+                    NpgsqlPropertyBuilderExtensions.UseSequence(b.Property<int>("Id"), "operations_id_seq");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("type");
+
+                    b.Property<int>("WalletId")
+                        .HasColumnType("integer")
+                        .HasColumnName("wallet_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WalletId", "OccurredAt")
+                        .HasDatabaseName("ix_operations_wallet_date");
+
+                    b.ToTable("operations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_operations_amount", "amount > 0");
+
+                            t.HasCheckConstraint("ck_operations_id_range", "id BETWEEN 13000001 AND 13999999");
+
+                            t.HasCheckConstraint("ck_operations_type", "type IN ('income', 'expense')");
                         });
                 });
 
@@ -310,6 +359,17 @@ namespace FinancialApp.DB.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FinancialApp.DB.Entities.Operation", b =>
+                {
+                    b.HasOne("FinancialApp.DB.Entities.Wallet", "Wallet")
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Wallet");
                 });
 
             modelBuilder.Entity("FinancialApp.DB.Entities.Wallet", b =>

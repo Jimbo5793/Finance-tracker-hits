@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Operation> Operations => Set<Operation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -20,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         modelBuilder.HasSequence<int>("categories_id_seq").StartsAt(IdRanges.CategoriesStart).HasMax(IdRanges.CategoriesEnd);
+        modelBuilder.HasSequence<int>("operations_id_seq").StartsAt(IdRanges.OperationsStart).HasMax(IdRanges.OperationsEnd);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

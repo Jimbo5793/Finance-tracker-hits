@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinancialApp.DB.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261112210125_AddCategoryKind")]
+    [Migration("20261112224453_AddCategoryKind")]
     partial class AddCategoryKind
     {
         /// <inheritdoc />
@@ -133,7 +133,7 @@ namespace FinancialApp.DB.Migrations
 
                             t.HasCheckConstraint("ck_categories_kind", "kind IN ('income', 'expense')");
 
-                            t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 50");
+                            t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 30");
                         });
                 });
 

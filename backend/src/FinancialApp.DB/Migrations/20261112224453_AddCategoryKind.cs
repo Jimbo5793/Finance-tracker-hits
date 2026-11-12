@@ -14,6 +14,10 @@ namespace FinancialApp.DB.Migrations
                 name: "ux_categories_user_name",
                 table: "categories");
 
+            migrationBuilder.DropCheckConstraint(
+                name: "ck_categories_name_length",
+                table: "categories");
+
             migrationBuilder.AddColumn<string>(
                 name: "kind",
                 table: "categories",
@@ -32,6 +36,11 @@ namespace FinancialApp.DB.Migrations
                 name: "ck_categories_kind",
                 table: "categories",
                 sql: "kind IN ('income', 'expense')");
+
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_categories_name_length",
+                table: "categories",
+                sql: "char_length(name) BETWEEN 1 AND 30");
         }
 
         /// <inheritdoc />
@@ -45,6 +54,10 @@ namespace FinancialApp.DB.Migrations
                 name: "ck_categories_kind",
                 table: "categories");
 
+            migrationBuilder.DropCheckConstraint(
+                name: "ck_categories_name_length",
+                table: "categories");
+
             migrationBuilder.DropColumn(
                 name: "kind",
                 table: "categories");
@@ -54,6 +67,11 @@ namespace FinancialApp.DB.Migrations
                 table: "categories",
                 columns: new[] { "user_id", "name" },
                 unique: true);
+
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_categories_name_length",
+                table: "categories",
+                sql: "char_length(name) BETWEEN 1 AND 50");
         }
     }
 }

@@ -12,7 +12,7 @@ public class CategoryConfig : IEntityTypeConfiguration<Category>
         {
             t.HasCheckConstraint("ck_categories_id_range",
                 $"id BETWEEN {IdRanges.CategoriesStart} AND {IdRanges.CategoriesEnd}");
-            t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 50");
+            t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 30");
             var kinds = string.Join(", ", CategoryKinds.All.Select(k => $"'{k}'"));
             t.HasCheckConstraint("ck_categories_kind", $"kind IN ({kinds})");
         });

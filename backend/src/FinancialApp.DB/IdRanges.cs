@@ -10,4 +10,7 @@ public static class IdRanges
     
     public const int CategoriesStart = 12000001;
     public const int CategoriesEnd = 12999999;
+    
+    public const int OperationsStart = 13000001;
+    public const int OperationsEnd = 13999999;
 }
