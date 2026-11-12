@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Currency> Currencies => Set<Currency>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
+    public DbSet<Category> Categories => Set<Category>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -18,6 +19,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.HasSequence<int>("wallets_id_seq").StartsAt(IdRanges.WalletsStart).HasMax(IdRanges.WalletsEnd);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.HasSequence<int>("categories_id_seq").StartsAt(IdRanges.CategoriesStart).HasMax(IdRanges.CategoriesEnd);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

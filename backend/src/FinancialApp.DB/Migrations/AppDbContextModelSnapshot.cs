@@ -23,6 +23,10 @@ namespace FinancialApp.DB.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence<int>("categories_id_seq")
+                .StartsAt(12000001L)
+                .HasMax(12999999L);
+
             modelBuilder.HasSequence<int>("users_id_seq")
                 .StartsAt(10000001L)
                 .HasMax(10999999L);
@@ -79,6 +83,45 @@ namespace FinancialApp.DB.Migrations
                         .HasDatabaseName("ix_audit_log_entity");
 
                     b.ToTable("audit_log", (string)null);
+                });
+
+            modelBuilder.Entity("FinancialApp.DB.Entities.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("nextval('categories_id_seq')");
+
+                    NpgsqlPropertyBuilderExtensions.UseSequence(b.Property<int>("Id"), "categories_id_seq");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("icon");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("citext")
+                        .HasColumnName("name");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ux_categories_user_name");
+
+                    b.ToTable("categories", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_categories_id_range", "id BETWEEN 12000001 AND 12999999");
+
+                            t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 50");
+                        });
                 });
 
             modelBuilder.Entity("FinancialApp.DB.Entities.Currency", b =>
@@ -238,6 +281,17 @@ namespace FinancialApp.DB.Migrations
                 });
 
             modelBuilder.Entity("FinancialApp.DB.Entities.AuditLogEntry", b =>
+                {
+                    b.HasOne("FinancialApp.DB.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FinancialApp.DB.Entities.Category", b =>
                 {
                     b.HasOne("FinancialApp.DB.Entities.User", "User")
                         .WithMany()

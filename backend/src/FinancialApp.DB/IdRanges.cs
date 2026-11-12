@@ -7,4 +7,7 @@ public static class IdRanges
 
     public const int WalletsStart = 11000001;
     public const int WalletsEnd = 11999999;
+    
+    public const int CategoriesStart = 12000001;
+    public const int CategoriesEnd = 12999999;
 }
