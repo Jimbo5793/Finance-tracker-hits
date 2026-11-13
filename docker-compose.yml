@@ -22,7 +22,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      Auth__Disabled: "true"
+      Auth__Disabled: ${AUTH_DISABLED:-false}
       Database__AutoMigrate: "true"
       Jwt__Key: ${JWT_KEY}
       Seed__Password: ${SEED_PASSWORD}

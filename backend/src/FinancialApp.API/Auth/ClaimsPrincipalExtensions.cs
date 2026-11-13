@@ -9,4 +9,6 @@ public static class ClaimsPrincipalExtensions
         var value = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
         return int.TryParse(value, out var id) ? id : null;
     }
+    public static Guid? GetTokenId(this ClaimsPrincipal user) =>
+        Guid.TryParse(user.FindFirstValue("jti"), out var id) ? id : null;
 }

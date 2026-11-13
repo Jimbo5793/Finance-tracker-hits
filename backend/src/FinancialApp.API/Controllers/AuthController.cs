@@ -1,3 +1,4 @@
+using FinancialApp.API.Auth;
 using FinancialApp.BLL.Models;
 using FinancialApp.BLL.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -38,5 +39,18 @@ public class AuthController(IAuthService auth) : ControllerBase
             default:
                 return StatusCode(StatusCodes.Status401Unauthorized, new { title = "Invalid username or password." });
         }
+    }
+    
+    [HttpPost("logout")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Logout(CancellationToken ct)
+    {
+        var jti = User.GetTokenId();
+        if (jti is null) return Unauthorized();
+
+        await auth.LogoutAsync(jti.Value, ct);
+        return NoContent();
     }
 }

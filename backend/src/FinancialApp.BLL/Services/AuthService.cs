@@ -39,4 +39,9 @@ public class AuthService(
 
         return LoginResult.Succeeded(new LoginResponse(issued.Token, issued.ExpiresAt));
     }
+    public Task<bool> IsTokenActiveAsync(Guid jti, CancellationToken ct = default) =>
+        tokens.IsActiveAsync(jti, DateTime.UtcNow, ct);
+
+    public Task LogoutAsync(Guid jti, CancellationToken ct = default) =>
+        tokens.DeleteAsync(jti, ct);
 }

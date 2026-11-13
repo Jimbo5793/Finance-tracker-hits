@@ -52,10 +52,15 @@ if (authDisabled)
         .AddAuthentication(DevAuthHandler.Scheme)
         .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.Scheme, null);
 }
+
 else
 {
-    builder.Services.AddAuthentication().AddJwtBearer();
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer();
+    builder.Services.ConfigureOptions<ConfigureJwtBearer>();
 }
+
 builder.Services.AddAuthorization();
 builder.Services.AddBusiness();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.Section));
