@@ -10,6 +10,8 @@ public static class DalServiceExtensions
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<IOperationRepository, OperationRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAuthTokenRepository, AuthTokenRepository>();
         return services;
     }
 }

@@ -13,4 +13,7 @@ public static class IdRanges
     
     public const int OperationsStart = 13000001;
     public const int OperationsEnd = 13999999;
+    
+    public const int AuthTokensStart = 14000001;
+    public const int AuthTokensEnd = 14999999;
 }

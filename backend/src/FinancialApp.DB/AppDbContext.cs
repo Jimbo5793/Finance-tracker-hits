@@ -12,6 +12,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Operation> Operations => Set<Operation>();
+    public DbSet<AuthToken> AuthTokens => Set<AuthToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,6 +23,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         modelBuilder.HasSequence<int>("categories_id_seq").StartsAt(IdRanges.CategoriesStart).HasMax(IdRanges.CategoriesEnd);
         modelBuilder.HasSequence<int>("operations_id_seq").StartsAt(IdRanges.OperationsStart).HasMax(IdRanges.OperationsEnd);
+        modelBuilder.HasSequence<int>("auth_tokens_id_seq").StartsAt(IdRanges.AuthTokensStart).HasMax(IdRanges.AuthTokensEnd);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

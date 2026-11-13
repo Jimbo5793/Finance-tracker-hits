@@ -2,6 +2,7 @@
 using FinancialApp.BLL;
 using FinancialApp.DB;
 using FinancialApp.DB.Entities;
+using FinancialApp.BLL.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +58,8 @@ else
 }
 builder.Services.AddAuthorization();
 builder.Services.AddBusiness();
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.Section));
+builder.Services.AddSingleton<ITokenIssuer, JwtTokenIssuer>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy => policy
@@ -81,6 +85,10 @@ if (builder.Configuration.GetValue<bool>("Database:AutoMigrate"))
         db.Users.Add(new User { Email = "dev@local.test" });
         await db.SaveChangesAsync();
     }
+    
+    var seedPassword = builder.Configuration["Seed:Password"];
+    if (!string.IsNullOrEmpty(seedPassword))
+        await UserSeeder.SeedAsync(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>(), seedPassword);
 }
 
 if (app.Environment.IsDevelopment())

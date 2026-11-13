@@ -23,6 +23,10 @@ namespace FinancialApp.DB.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence<int>("auth_tokens_id_seq")
+                .StartsAt(14000001L)
+                .HasMax(14999999L);
+
             modelBuilder.HasSequence<int>("categories_id_seq")
                 .StartsAt(12000001L)
                 .HasMax(12999999L);
@@ -87,6 +91,48 @@ namespace FinancialApp.DB.Migrations
                         .HasDatabaseName("ix_audit_log_entity");
 
                     b.ToTable("audit_log", (string)null);
+                });
+
+            modelBuilder.Entity("FinancialApp.DB.Entities.AuthToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("nextval('auth_tokens_id_seq')");
+
+                    NpgsqlPropertyBuilderExtensions.UseSequence(b.Property<int>("Id"), "auth_tokens_id_seq");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("Jti")
+                        .HasColumnType("uuid")
+                        .HasColumnName("jti");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Jti")
+                        .IsUnique()
+                        .HasDatabaseName("ux_auth_tokens_jti");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("auth_tokens", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_auth_tokens_id_range", "id BETWEEN 14000001 AND 14999999");
+                        });
                 });
 
             modelBuilder.Entity("FinancialApp.DB.Entities.Category", b =>
@@ -257,18 +303,33 @@ namespace FinancialApp.DB.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
+                        .HasColumnType("citext")
                         .HasColumnName("email");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text")
+                        .HasColumnName("password_hash");
+
+                    b.Property<string>("Username")
+                        .HasColumnType("citext")
+                        .HasColumnName("username");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("Username")
+                        .IsUnique()
+                        .HasDatabaseName("ux_users_username");
+
                     b.ToTable("users", null, t =>
                         {
+                            t.HasCheckConstraint("ck_users_email_format", "email LIKE '%@%' AND char_length(email) <= 255");
+
                             t.HasCheckConstraint("ck_users_id_range", "id BETWEEN 10000001 AND 10999999");
+
+                            t.HasCheckConstraint("ck_users_username_format", "username IS NULL OR (char_length(username) BETWEEN 3 AND 30 AND username !~ '[@[:space:]]')");
                         });
                 });
 
@@ -340,6 +401,17 @@ namespace FinancialApp.DB.Migrations
                 });
 
             modelBuilder.Entity("FinancialApp.DB.Entities.AuditLogEntry", b =>
+                {
+                    b.HasOne("FinancialApp.DB.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FinancialApp.DB.Entities.AuthToken", b =>
                 {
                     b.HasOne("FinancialApp.DB.Entities.User", "User")
                         .WithMany()
