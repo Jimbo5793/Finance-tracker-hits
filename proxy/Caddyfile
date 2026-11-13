@@ -1,0 +1,13 @@
+{
+	auto_https disable_redirects
+	local_certs
+}
+
+https://localhost {
+	tls internal
+	reverse_proxy backend:8080
+}
+
+http://localhost {
+	redir https://localhost:5001{uri} 308
+}

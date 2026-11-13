@@ -26,11 +26,21 @@ services:
       Database__AutoMigrate: "true"
       Jwt__Key: ${JWT_KEY}
       Seed__Password: ${SEED_PASSWORD}
-    ports:
-      - "${BACKEND_PORT:-5000}:8080"
     depends_on:
       db:
         condition: service_healthy
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:80"
+      - "${BACKEND_HTTPS_PORT:-5001}:443"
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - backend
 
   frontend:
     build: ./frontend
@@ -42,3 +52,4 @@ services:
 
 volumes:
   db-data:
+  caddy-data:
