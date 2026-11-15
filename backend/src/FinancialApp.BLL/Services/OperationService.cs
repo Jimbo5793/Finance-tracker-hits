@@ -67,17 +67,28 @@ public class OperationService(IOperationRepository operations, IWalletRepository
         return id;
     }
 
-    /// <summary>Only expenses for now. A missing type means "expense".</summary>
-    private static string? ValidateType(string? value, Action<string, string> fail)
+    /// <summary>"income" or "expense", any capitalisation. A missing type means "expense".</summary>
+    private static string? ValidateType(JsonElement? json, Action<string, string> fail)
     {
+        if (json is null || json.Value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            return OperationTypes.Expense;
+
+        var allowed = string.Join(", ", OperationTypes.All);
+        if (json.Value.ValueKind != JsonValueKind.String)
+        {
+            fail("type", $"Type must be text. Allowed types: {allowed}.");
+            return null;
+        }
+
+        var value = json.Value.GetString()!;
         if (string.IsNullOrWhiteSpace(value))
             return OperationTypes.Expense;
 
-        if (string.Equals(value.Trim(), OperationTypes.Expense, StringComparison.OrdinalIgnoreCase))
-            return OperationTypes.Expense;
-
-        fail("type", $"\"{value}\" is not allowed. Only \"{OperationTypes.Expense}\" can be recorded.");
-        return null;
+        // Accept any capitalisation, store the canonical spelling
+        var type = OperationTypes.All.FirstOrDefault(t => string.Equals(t, value.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (type is null)
+            fail("type", $"\"{value}\" is not an allowed type. Allowed types: {allowed}.");
+        return type;
     }
 
     private static decimal ValidateAmount(JsonElement? value, Action<string, string> fail)

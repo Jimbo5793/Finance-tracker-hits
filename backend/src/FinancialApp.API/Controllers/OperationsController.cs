@@ -14,7 +14,7 @@ namespace FinancialApp.API.Controllers;
 public class OperationsController(IOperationService service) : ControllerBase
 {
     /// <summary>
-    /// Records an expense in one of the logged-in user's wallets. 201 with the new operation,
+    /// Records an income or an expense in one of the logged-in user's wallets. 201 with the new operation,
     /// 400 with an "errors" object naming each wrong field, or 404 if the wallet is not the user's.
     /// Nothing is saved on 400 or 404.
     /// </summary>

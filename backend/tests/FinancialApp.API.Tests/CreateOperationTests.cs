@@ -8,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinancialApp.API.Tests;
 
-/// <summary>POST /operations for an expense — one test per check in the task, plus the audit log.</summary>
+/// <summary>
+/// POST /operations — one test per check in T3FIN-77 (expense) and T3FIN-108 (income), plus the audit log.
+/// </summary>
 [Collection(ApiCollection.Name)]
 public class CreateOperationTests(ApiFactory api)
 {
@@ -43,6 +45,59 @@ public class CreateOperationTests(ApiFactory api)
         // and the wallet balance goes down by the expense
         var wallets = await api.ClientFor(userId.ToString()).GetFromJsonAsync<List<WalletResponse>>("/wallets");
         Assert.Equal(70m, Assert.Single(wallets!).Balance);
+    }
+
+    [Fact]
+    public async Task ValidIncome_IsSavedWithTypeIncome_AndRaisesBalance()
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId, startingBalance: 100);
+
+        var response = await PostAsync(userId, $$"""{ "walletId": {{walletId}}, "type": "income", "amount": 50 }""");
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var operation = await response.Content.ReadFromJsonAsync<OperationResponse>();
+        Assert.NotNull(operation);
+        Assert.True(operation.Id > 0);
+        Assert.Equal(walletId, operation.WalletId);
+        Assert.Equal("income", operation.Type);
+        Assert.Equal(50m, operation.Amount);
+        Assert.Equal(Iso(Today), operation.Date);
+
+        var saved = await api.QueryDbAsync(db => db.Operations.SingleAsync(o => o.Id == operation.Id));
+        Assert.Equal(OperationTypes.Income, saved.Type);
+        Assert.Equal(50m, saved.Amount);
+
+        var wallets = await api.ClientFor(userId.ToString()).GetFromJsonAsync<List<WalletResponse>>("/wallets");
+        Assert.Equal(150m, Assert.Single(wallets!).Balance);
+    }
+
+    [Fact]
+    public async Task IncomeAndExpense_BothCountInBalance()
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId, startingBalance: 100);
+
+        await CreateAsync(userId, $$"""{ "walletId": {{walletId}}, "type": "income", "amount": 50 }""");
+        await CreateAsync(userId, $$"""{ "walletId": {{walletId}}, "type": "expense", "amount": 30 }""");
+
+        var wallets = await api.ClientFor(userId.ToString()).GetFromJsonAsync<List<WalletResponse>>("/wallets");
+        Assert.Equal(120m, Assert.Single(wallets!).Balance);
+    }
+
+    [Theory]
+    [InlineData("income", "income")]
+    [InlineData("Income", "income")]
+    [InlineData("INCOME", "income")]
+    [InlineData("Expense", "expense")]
+    public async Task Type_IsCaseInsensitive_AndStoredLowerCase(string sent, string stored)
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+
+        var operation = await CreateAsync(userId, $$"""{ "walletId": {{walletId}}, "type": "{{sent}}", "amount": 5 }""");
+
+        Assert.Equal(stored, operation.Type);
     }
 
     [Fact]
@@ -84,9 +139,11 @@ public class CreateOperationTests(ApiFactory api)
             { "amount", """{ "walletId": {wallet}, "amount": "abc" }""" },
             { "amount", """{ "walletId": {wallet}, "amount": 10.123 }""" },
             { "amount", """{ "walletId": {wallet}, "amount": -5 }""" },
+            { "amount", """{ "walletId": {wallet}, "type": "income", "amount": 0 }""" },
+            { "amount", """{ "walletId": {wallet}, "type": "income", "amount": "abc" }""" },
             { "amount", """{ "walletId": {wallet} }""" },
-            { "type", """{ "walletId": {wallet}, "type": "income", "amount": 10 }""" },
             { "type", """{ "walletId": {wallet}, "type": "transfer", "amount": 10 }""" },
+            { "type", """{ "walletId": {wallet}, "type": 5, "amount": 10 }""" },
             { "date", $$"""{ "walletId": {wallet}, "amount": 10, "date": "{{lastMonth}}" }""" },
             { "date", $$"""{ "walletId": {wallet}, "amount": 10, "date": "{{nextMonth}}" }""" },
             { "date", """{ "walletId": {wallet}, "amount": 10, "date": "tomorrow" }""" },
@@ -115,7 +172,7 @@ public class CreateOperationTests(ApiFactory api)
     {
         var userId = await api.CreateUserAsync();
 
-        var response = await PostAsync(userId, """{ "walletId": "x", "type": "income", "amount": 0, "date": "2000-01-01" }""");
+        var response = await PostAsync(userId, """{ "walletId": "x", "type": "transfer", "amount": 0, "date": "2000-01-01" }""");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(["amount", "date", "type", "walletId"], await ErrorFieldsAsync(response));
@@ -156,6 +213,25 @@ public class CreateOperationTests(ApiFactory api)
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Equal(0, await OperationCountAsync(walletId));
+    }
+
+    [Fact]
+    public async Task SavedIncome_IsWrittenToAuditLog()
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+
+        var operation = await CreateAsync(userId, $$"""{ "walletId": {{walletId}}, "type": "income", "amount": 50 }""");
+
+        var entry = await api.QueryDbAsync(db =>
+            db.AuditLog.SingleAsync(a => a.EntityType == "operation" && a.EntityId == operation.Id));
+        Assert.Equal(userId, entry.UserId);
+        Assert.Equal(AuditActions.OperationCreated, entry.Action);
+
+        using var data = JsonDocument.Parse(entry.Data);
+        Assert.Equal(walletId, data.RootElement.GetProperty("walletId").GetInt32());
+        Assert.Equal("income", data.RootElement.GetProperty("type").GetString());
+        Assert.Equal(50m, data.RootElement.GetProperty("amount").GetDecimal());
     }
 
     [Fact]

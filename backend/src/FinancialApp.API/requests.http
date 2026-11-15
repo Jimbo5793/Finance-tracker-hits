@@ -49,6 +49,17 @@ Content-Type: application/json
   "date": "2026-11-01"
 }
 
+### record an income (type is "income" or "expense"; missing = "expense")
+POST http://localhost:5080/operations
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "walletId": 11000001,
+  "type": "income",
+  "amount": 50
+}
+
 ### record an expense for today
 POST http://localhost:5080/operations
 Authorization: Bearer <token>
