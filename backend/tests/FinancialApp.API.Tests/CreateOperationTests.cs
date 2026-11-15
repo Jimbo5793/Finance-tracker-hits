@@ -9,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FinancialApp.API.Tests;
 
 /// <summary>
-/// POST /operations — one test per check in T3FIN-77 (expense) and T3FIN-108 (income), plus the audit log.
+/// POST /operations — one test per check in T3FIN-77 (expense), T3FIN-108 (income)
+/// and T3FIN-112 (category, comment and tax amount), plus the audit log.
 /// </summary>
 [Collection(ApiCollection.Name)]
 public class CreateOperationTests(ApiFactory api)
@@ -216,6 +217,159 @@ public class CreateOperationTests(ApiFactory api)
     }
 
     [Fact]
+    public async Task ExpenseWithCategoryCommentAndTax_IsSavedWithAllThree()
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+        var food = await CreateCategoryAsync(userId, "Food", "expense");
+
+        var response = await PostAsync(userId, $$"""
+            { "walletId": {{walletId}}, "type": "expense", "amount": 30,
+              "categoryId": {{food}}, "comment": "Lunch", "taxAmount": 3 }
+            """);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var operation = (await response.Content.ReadFromJsonAsync<OperationResponse>())!;
+        Assert.Equal(food, operation.CategoryId);
+        Assert.Equal("Lunch", operation.Comment);
+        Assert.Equal(3m, operation.TaxAmount);
+
+        var saved = await api.QueryDbAsync(db => db.Operations.SingleAsync(o => o.Id == operation.Id));
+        Assert.Equal(food, saved.CategoryId);
+        Assert.Equal("Lunch", saved.Comment);
+        Assert.Equal(3m, saved.TaxAmount);
+        Assert.Equal(30m, saved.Amount);
+    }
+
+    [Fact]
+    public async Task IncomeWithIncomeCategory_IsSaved()
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+        var salary = await CreateCategoryAsync(userId, "Salary", "income");
+
+        var operation = await CreateAsync(userId,
+            $$"""{ "walletId": {{walletId}}, "type": "income", "amount": 50, "categoryId": {{salary}} }""");
+
+        Assert.Equal("income", operation.Type);
+        Assert.Equal(salary, operation.CategoryId);
+        var saved = await api.QueryDbAsync(db => db.Operations.SingleAsync(o => o.Id == operation.Id));
+        Assert.Equal(salary, saved.CategoryId);
+    }
+
+    [Theory]
+    [InlineData("""{ "walletId": {wallet}, "amount": 10 }""")]
+    [InlineData("""{ "walletId": {wallet}, "amount": 10, "categoryId": null, "comment": null, "taxAmount": null }""")]
+    [InlineData("""{ "walletId": {wallet}, "amount": 10, "comment": "" }""")]
+    [InlineData("""{ "walletId": {wallet}, "amount": 10, "comment": "   " }""")]
+    public async Task WithoutCategoryCommentAndTax_IsSavedWithEmptyValues(string body)
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+
+        var operation = await CreateAsync(userId, body.Replace("{wallet}", walletId.ToString()));
+
+        Assert.Null(operation.CategoryId);
+        Assert.Null(operation.Comment);
+        Assert.Null(operation.TaxAmount);
+        var saved = await api.QueryDbAsync(db => db.Operations.SingleAsync(o => o.Id == operation.Id));
+        Assert.Null(saved.CategoryId);
+        Assert.Null(saved.Comment);
+        Assert.Null(saved.TaxAmount);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("30")]
+    [InlineData("2.5")]
+    public async Task TaxAmount_FromZeroUpToTheAmount_IsAccepted(string tax)
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+
+        var operation = await CreateAsync(userId, $$"""{ "walletId": {{walletId}}, "amount": 30, "taxAmount": {{tax}} }""");
+
+        Assert.Equal(decimal.Parse(tax, CultureInfo.InvariantCulture), operation.TaxAmount);
+    }
+
+    [Fact]
+    public async Task CommentOf200Characters_IsAccepted_AndTrimmed()
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+        var comment = new string('a', 200);
+
+        var operation = await CreateAsync(userId, $$"""{ "walletId": {{walletId}}, "amount": 30, "comment": "  {{comment}}  " }""");
+
+        Assert.Equal(comment, operation.Comment);
+    }
+
+    [Theory]
+    // {wallet}, {expenseCat}, {incomeCat}, {otherUsersCat} are replaced in the test
+    [InlineData("categoryId", """{ "walletId": {wallet}, "type": "income", "amount": 10, "categoryId": {expenseCat} }""")]
+    [InlineData("categoryId", """{ "walletId": {wallet}, "type": "expense", "amount": 10, "categoryId": {incomeCat} }""")]
+    [InlineData("categoryId", """{ "walletId": {wallet}, "amount": 10, "categoryId": {otherUsersCat} }""")]
+    [InlineData("categoryId", """{ "walletId": {wallet}, "amount": 10, "categoryId": 12999999 }""")]
+    [InlineData("categoryId", """{ "walletId": {wallet}, "amount": 10, "categoryId": "abc" }""")]
+    [InlineData("comment", """{ "walletId": {wallet}, "amount": 10, "comment": "{comment201}" }""")]
+    [InlineData("taxAmount", """{ "walletId": {wallet}, "amount": 10, "taxAmount": 10.01 }""")]
+    [InlineData("taxAmount", """{ "walletId": {wallet}, "amount": 10, "taxAmount": -1 }""")]
+    [InlineData("taxAmount", """{ "walletId": {wallet}, "amount": 10, "taxAmount": 1.234 }""")]
+    [InlineData("taxAmount", """{ "walletId": {wallet}, "amount": 10, "taxAmount": "abc" }""")]
+    public async Task InvalidCategoryCommentOrTax_Returns400NamingTheField_AndSavesNothing(string field, string body)
+    {
+        var userId = await api.CreateUserAsync();
+        var other = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+        var expenseCat = await CreateCategoryAsync(userId, "Food", "expense");
+        var incomeCat = await CreateCategoryAsync(userId, "Salary", "income");
+        var otherUsersCat = await CreateCategoryAsync(other, "Food", "expense");
+
+        var response = await PostAsync(userId, body
+            .Replace("{wallet}", walletId.ToString())
+            .Replace("{expenseCat}", expenseCat.ToString())
+            .Replace("{incomeCat}", incomeCat.ToString())
+            .Replace("{otherUsersCat}", otherUsersCat.ToString())
+            .Replace("{comment201}", new string('a', 201)));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal([field], await ErrorFieldsAsync(response));
+        Assert.Equal(0, await OperationCountAsync(walletId));
+        Assert.Equal(0, await OperationAuditCountAsync(userId));
+    }
+
+    [Fact]
+    public async Task WrongAmount_AndTaxAmount_OnlyAmountErrorWhenTaxIsOtherwiseFine()
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+
+        var response = await PostAsync(userId, $$"""{ "walletId": {{walletId}}, "amount": "abc", "taxAmount": 3 }""");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(["amount"], await ErrorFieldsAsync(response));
+    }
+
+    [Fact]
+    public async Task CategoryCommentAndTax_AreWrittenToAuditLog()
+    {
+        var userId = await api.CreateUserAsync();
+        var walletId = await CreateWalletAsync(userId);
+        var food = await CreateCategoryAsync(userId, "Food", "expense");
+
+        var operation = await CreateAsync(userId, $$"""
+            { "walletId": {{walletId}}, "amount": 30, "categoryId": {{food}}, "comment": "Lunch", "taxAmount": 3 }
+            """);
+
+        var entry = await api.QueryDbAsync(db =>
+            db.AuditLog.SingleAsync(a => a.EntityType == "operation" && a.EntityId == operation.Id));
+        using var data = JsonDocument.Parse(entry.Data);
+        Assert.Equal(food, data.RootElement.GetProperty("categoryId").GetInt32());
+        Assert.Equal("Lunch", data.RootElement.GetProperty("comment").GetString());
+        Assert.Equal(3m, data.RootElement.GetProperty("taxAmount").GetDecimal());
+    }
+
+    [Fact]
     public async Task SavedIncome_IsWrittenToAuditLog()
     {
         var userId = await api.CreateUserAsync();
@@ -261,6 +415,15 @@ public class CreateOperationTests(ApiFactory api)
         Assert.Equal(2, await OperationAuditCountAsync(userId));
     }
 
+    private async Task<int> CreateCategoryAsync(int userId, string name, string kind)
+    {
+        var response = await api.ClientFor(userId.ToString()).PostAsync("/categories", new StringContent(
+            $$"""{ "name": "{{name}}", "icon": "🏷️", "kind": "{{kind}}" }""", Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return doc.RootElement.GetProperty("id").GetInt32();
+    }
+
     private async Task<int> CreateWalletAsync(int userId, decimal startingBalance = 0)
     {
         var response = await api.ClientFor(userId.ToString()).PostAsync("/wallets", new StringContent(
@@ -295,7 +458,8 @@ public class CreateOperationTests(ApiFactory api)
 
     private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private sealed record OperationResponse(int Id, int WalletId, string Type, decimal Amount, string Date);
+    private sealed record OperationResponse(
+        int Id, int WalletId, string Type, decimal Amount, string Date, int? CategoryId, string? Comment, decimal? TaxAmount);
 
     private sealed record WalletResponse(int Id, string Name, string Type, string Currency, decimal Balance);
 }

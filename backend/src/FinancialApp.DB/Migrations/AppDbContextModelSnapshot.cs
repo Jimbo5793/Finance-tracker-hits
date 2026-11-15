@@ -254,11 +254,24 @@ namespace FinancialApp.DB.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("amount");
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer")
+                        .HasColumnName("category_id");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("comment");
+
                     b.Property<DateTime>("OccurredAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamptz")
                         .HasColumnName("occurred_at")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<decimal?>("TaxAmount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("tax_amount");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -272,6 +285,9 @@ namespace FinancialApp.DB.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("ix_operations_category");
+
                     b.HasIndex("WalletId", "OccurredAt")
                         .HasDatabaseName("ix_operations_wallet_date");
 
@@ -279,7 +295,11 @@ namespace FinancialApp.DB.Migrations
                         {
                             t.HasCheckConstraint("ck_operations_amount", "amount > 0");
 
+                            t.HasCheckConstraint("ck_operations_comment_length", "char_length(comment) <= 200");
+
                             t.HasCheckConstraint("ck_operations_id_range", "id BETWEEN 13000001 AND 13999999");
+
+                            t.HasCheckConstraint("ck_operations_tax_amount", "tax_amount IS NULL OR (tax_amount >= 0 AND tax_amount <= amount)");
 
                             t.HasCheckConstraint("ck_operations_type", "type IN ('income', 'expense')");
                         });
@@ -435,11 +455,18 @@ namespace FinancialApp.DB.Migrations
 
             modelBuilder.Entity("FinancialApp.DB.Entities.Operation", b =>
                 {
+                    b.HasOne("FinancialApp.DB.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FinancialApp.DB.Entities.Wallet", "Wallet")
                         .WithMany()
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Category");
 
                     b.Navigation("Wallet");
                 });

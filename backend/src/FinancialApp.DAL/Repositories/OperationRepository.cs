@@ -44,6 +44,9 @@ public class OperationRepository(AppDbContext db) : IOperationRepository
                 operation.Type,
                 operation.Amount,
                 Date = DateOnly.FromDateTime(operation.OccurredAt),
+                operation.CategoryId,
+                operation.Comment,
+                operation.TaxAmount,
             }, JsonSerializerOptions.Web),
         });
         await db.SaveChangesAsync(ct);

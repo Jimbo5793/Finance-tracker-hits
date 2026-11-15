@@ -7,6 +7,9 @@ public interface ICategoryRepository
     /// <summary>Categories of one user, sorted by name (case-insensitive). A null kind means all kinds.</summary>
     Task<IReadOnlyList<Category>> GetByUserAsync(int userId, string? kind, CancellationToken ct = default);
 
+    /// <summary>The category, or null if it does not exist or belongs to another user.</summary>
+    Task<Category?> GetForUserAsync(int categoryId, int userId, CancellationToken ct = default);
+
     /// <summary>True if the user has a category of this kind with this name. Case-insensitive, like the database column.</summary>
     Task<bool> NameExistsAsync(int userId, string kind, string name, CancellationToken ct = default);
 

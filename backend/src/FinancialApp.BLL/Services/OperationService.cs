@@ -6,7 +6,10 @@ using FinancialApp.DB.Entities;
 
 namespace FinancialApp.BLL.Services;
 
-public class OperationService(IOperationRepository operations, IWalletRepository wallets) : IOperationService
+public class OperationService(
+    IOperationRepository operations,
+    IWalletRepository wallets,
+    ICategoryRepository categories) : IOperationService
 {
     public const string DateFormat = "yyyy-MM-dd";
 
@@ -28,6 +31,13 @@ public class OperationService(IOperationRepository operations, IWalletRepository
         var type = ValidateType(request.Type, Fail);
         var amount = ValidateAmount(request.Amount, Fail);
         var date = ValidateDate(request.Date, today, Fail);
+        var categoryId = ValidateCategoryId(request.CategoryId, Fail);
+        var comment = ValidateComment(request.Comment, Fail);
+        var taxAmount = ValidateTaxAmount(request.TaxAmount, errors.ContainsKey("amount") ? null : amount, Fail);
+
+        // The category must be one of the user's own, of the same kind as the operation.
+        if (categoryId is not null)
+            await ValidateCategoryAsync(categoryId.Value, type, userId, Fail, ct);
 
         if (errors.Count > 0)
             return CreateOperationResult.Invalid(errors.ToDictionary(e => e.Key, e => e.Value.ToArray()));
@@ -42,12 +52,16 @@ public class OperationService(IOperationRepository operations, IWalletRepository
             Type = type!,
             Amount = amount,
             OccurredAt = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+            CategoryId = categoryId,
+            Comment = comment,
+            TaxAmount = taxAmount,
         };
 
         await operations.CreateWithAuditAsync(operation, userId, ct);
 
-        return CreateOperationResult.Created(
-            new OperationDto(operation.Id, operation.WalletId, operation.Type, operation.Amount, date));
+        return CreateOperationResult.Created(new OperationDto(
+            operation.Id, operation.WalletId, operation.Type, operation.Amount, date,
+            operation.CategoryId, operation.Comment, operation.TaxAmount));
     }
 
     private static int? ValidateWalletId(JsonElement? value, Action<string, string> fail)
@@ -134,5 +148,67 @@ public class OperationService(IOperationRepository operations, IWalletRepository
                          $"to {lastDay.ToString(DateFormat, CultureInfo.InvariantCulture)}).");
 
         return date;
+    }
+
+    /// <summary>Optional. Missing or null means no category.</summary>
+    private static int? ValidateCategoryId(JsonElement? value, Action<string, string> fail)
+    {
+        if (value is null || value.Value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            return null;
+
+        if (value.Value.ValueKind != JsonValueKind.Number || !value.Value.TryGetInt32(out var id))
+        {
+            fail("categoryId", "Category id must be a whole number.");
+            return null;
+        }
+
+        return id;
+    }
+
+    private async Task ValidateCategoryAsync(
+        int categoryId, string? type, int userId, Action<string, string> fail, CancellationToken ct)
+    {
+        var category = await categories.GetForUserAsync(categoryId, userId, ct);
+        if (category is null)
+            fail("categoryId", "Category not found.");
+        else if (type is not null && category.Kind != type)
+            fail("categoryId", $"\"{category.Name}\" is an {category.Kind} category. An {type} needs an {type} category.");
+    }
+
+    /// <summary>Optional. Missing, empty or only spaces means no comment.</summary>
+    private static string? ValidateComment(string? value, Action<string, string> fail)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var comment = value.Trim();
+        if (comment.Length > Operation.MaxCommentLength)
+            fail("comment", $"Comment can be at most {Operation.MaxCommentLength} characters.");
+        return comment;
+    }
+
+    /// <summary>
+    /// Optional. Between 0 and the amount, with at most 2 decimals.
+    /// <paramref name="amount"/> is null when the amount itself is wrong; then only the tax amount's own rules are checked.
+    /// </summary>
+    private static decimal? ValidateTaxAmount(JsonElement? value, decimal? amount, Action<string, string> fail)
+    {
+        if (value is null || value.Value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            return null;
+
+        if (value.Value.ValueKind != JsonValueKind.Number || !value.Value.TryGetDecimal(out var tax))
+        {
+            fail("taxAmount", "Tax amount must be a number.");
+            return null;
+        }
+
+        if (tax < 0)
+            fail("taxAmount", "Tax amount must be 0 or more.");
+        else if (tax != decimal.Round(tax, 2))
+            fail("taxAmount", "Tax amount can have at most 2 decimals.");
+        else if (amount is not null && tax > amount)
+            fail("taxAmount", "Tax amount cannot be bigger than the amount.");
+
+        return tax;
     }
 }

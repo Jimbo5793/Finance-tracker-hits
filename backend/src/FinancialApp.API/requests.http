@@ -60,6 +60,22 @@ Content-Type: application/json
   "amount": 50
 }
 
+### record an expense with a category, comment and tax amount (all three optional)
+# categoryId must be one of your categories of the same kind; comment max 200 characters;
+# taxAmount between 0 and the amount, at most 2 decimals
+POST http://localhost:5080/operations
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "walletId": 11000001,
+  "type": "expense",
+  "amount": 30,
+  "categoryId": 12000001,
+  "comment": "Lunch",
+  "taxAmount": 3
+}
+
 ### record an expense for today
 POST http://localhost:5080/operations
 Authorization: Bearer <token>

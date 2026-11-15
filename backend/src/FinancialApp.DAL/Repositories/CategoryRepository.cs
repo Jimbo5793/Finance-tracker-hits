@@ -15,6 +15,9 @@ public class CategoryRepository(AppDbContext db) : ICategoryRepository
             .ThenBy(c => c.Kind)  // the same name can exist once per kind
             .ToListAsync(ct);
 
+    public Task<Category?> GetForUserAsync(int categoryId, int userId, CancellationToken ct = default) =>
+        db.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == categoryId && c.UserId == userId, ct);
+
     // name is citext, so this comparison is case-insensitive in the database
     public Task<bool> NameExistsAsync(int userId, string kind, string name, CancellationToken ct = default) =>
         db.Categories.AnyAsync(c => c.UserId == userId && c.Kind == kind && c.Name == name, ct);
