@@ -67,3 +67,18 @@ Content-Type: application/json
   "walletId": 11000001,
   "amount": 30
 }
+
+### create a category (kind is required: income or expense)
+POST http://localhost:5080/categories
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Salary",
+  "icon": "💰",
+  "kind": "income"
+}
+
+### categories of one kind (no kind = all; any other kind = 400)
+GET http://localhost:5080/categories?kind=income
+Authorization: Bearer <token>
