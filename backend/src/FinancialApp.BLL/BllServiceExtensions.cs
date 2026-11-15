@@ -13,6 +13,7 @@ public static class BllServiceExtensions
         services.AddDataAccess();
         services.AddScoped<ICurrencyService, CurrencyService>();
         services.AddScoped<IWalletService, WalletService>();
+        services.AddScoped<IOperationService, OperationService>();
         services.AddScoped<IWalletBalanceCalculator, WalletBalanceCalculator>();
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IAuthService, AuthService>();

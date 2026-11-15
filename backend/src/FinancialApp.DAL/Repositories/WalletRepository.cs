@@ -24,6 +24,9 @@ public class WalletRepository(AppDbContext db) : IWalletRepository
         return new HashSet<string>(names, StringComparer.OrdinalIgnoreCase);
     }
 
+    public Task<bool> ExistsForUserAsync(int walletId, int userId, CancellationToken ct = default) =>
+        db.Wallets.AnyAsync(w => w.Id == walletId && w.UserId == userId, ct);
+
     public async Task CreateWithAuditAsync(Wallet wallet, CancellationToken ct = default)
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);

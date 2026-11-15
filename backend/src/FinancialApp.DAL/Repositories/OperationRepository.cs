@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FinancialApp.DB;
 using FinancialApp.DB.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -22,5 +23,31 @@ public class OperationRepository(AppDbContext db) : IOperationRepository
             .ToListAsync(ct);
 
         return rows.ToDictionary(r => r.WalletId, r => r.Net);
+    }
+
+    public async Task CreateWithAuditAsync(Operation operation, int userId, CancellationToken ct = default)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+        db.Operations.Add(operation);
+        await db.SaveChangesAsync(ct);
+
+        db.AuditLog.Add(new AuditLogEntry
+        {
+            UserId = userId,
+            Action = AuditActions.OperationCreated,
+            EntityType = "operation",
+            EntityId = operation.Id,
+            Data = JsonSerializer.Serialize(new
+            {
+                operation.WalletId,
+                operation.Type,
+                operation.Amount,
+                Date = DateOnly.FromDateTime(operation.OccurredAt),
+            }, JsonSerializerOptions.Web),
+        });
+        await db.SaveChangesAsync(ct);
+
+        await tx.CommitAsync(ct);
     }
 }

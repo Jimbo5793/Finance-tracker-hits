@@ -10,6 +10,9 @@ public interface IWalletRepository
     /// <summary>Names of the user's wallets. Case-insensitive, like the database column.</summary>
     Task<IReadOnlySet<string>> GetNamesAsync(int userId, CancellationToken ct = default);
 
+    /// <summary>True only if the wallet exists and belongs to this user.</summary>
+    Task<bool> ExistsForUserAsync(int walletId, int userId, CancellationToken ct = default);
+
     /// <summary>
     /// Saves the wallet and its audit log entry in one transaction: either both are saved or neither.
     /// Throws <see cref="WalletNameTakenException"/> if the name is already used by this user.

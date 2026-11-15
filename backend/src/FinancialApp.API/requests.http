@@ -36,3 +36,34 @@ Content-Type: application/json
   "currency": "RUB",
   "startingBalance": 5000
 }
+
+### record an expense (date is optional, defaults to today; must be in the current month)
+POST http://localhost:5080/operations
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "walletId": 11000001,
+  "type": "expense",
+  "amount": 30,
+  "date": "2026-11-01"
+}
+
+### record an expense for today
+POST http://localhost:5080/operations
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "walletId": 11000001,
+  "amount": 30
+}
+
+### expense without token (401)
+POST http://localhost:5080/operations
+Content-Type: application/json
+
+{
+  "walletId": 11000001,
+  "amount": 30
+}
