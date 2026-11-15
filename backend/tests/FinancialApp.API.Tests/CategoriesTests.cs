@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinancialApp.API.Tests;
 
-/// <summary>POST and GET /categories with the kind — one test per check in the task, plus the audit log.</summary>
+/// <summary>POST and GET /categories — one test per check in T3FIN-89 (kind) and T3FIN-92 (validation), plus the audit log.</summary>
 [Collection(ApiCollection.Name)]
 public class CategoriesTests(ApiFactory api)
 {
@@ -30,6 +30,38 @@ public class CategoriesTests(ApiFactory api)
         Assert.Equal(userId, saved.UserId);
         Assert.Equal(CategoryKinds.Income, saved.Kind);
         Assert.Equal("💰", saved.Icon);
+    }
+
+    [Fact]
+    public async Task ValidCategory_IsCreated_AndAnswerContainsId()
+    {
+        var userId = await api.CreateUserAsync();
+
+        var response = await PostAsync(userId, """{ "name": "Food", "icon": "🍔", "kind": "expense" }""");
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var category = await response.Content.ReadFromJsonAsync<CategoryResponse>();
+        Assert.NotNull(category);
+        Assert.True(category.Id > 0);
+        Assert.Equal("Food", category.Name);
+        Assert.Equal("🍔", category.Icon);
+        Assert.True(await api.QueryDbAsync(db => db.Categories.AnyAsync(c => c.Id == category.Id && c.UserId == userId)));
+    }
+
+    [Theory]
+    [InlineData("🍔")]
+    [InlineData("🇺🇦")]
+    [InlineData("👍🏽")]
+    [InlineData("👨‍👩‍👧")]
+    [InlineData("❤️")]
+    [InlineData("1️⃣")]
+    public async Task AnySingleEmoji_IsAcceptedAsIcon(string icon)
+    {
+        var userId = await api.CreateUserAsync();
+
+        var category = await CreateAsync(userId, $$"""{ "name": "Test", "icon": "{{icon}}", "kind": "expense" }""");
+
+        Assert.Equal(icon, category.Icon);
     }
 
     [Fact]
@@ -67,9 +99,16 @@ public class CategoriesTests(ApiFactory api)
     [InlineData("kind", """{ "name": "Salary", "icon": "💰", "kind": "" }""")]
     [InlineData("kind", """{ "name": "Salary", "icon": "💰", "kind": "transfer" }""")]
     [InlineData("name", """{ "icon": "💰", "kind": "income" }""")]
+    [InlineData("name", """{ "name": "", "icon": "💰", "kind": "income" }""")]
     [InlineData("name", """{ "name": "   ", "icon": "💰", "kind": "income" }""")]
     [InlineData("name", """{ "name": "1234567890123456789012345678901", "icon": "💰", "kind": "income" }""")]
     [InlineData("icon", """{ "name": "Salary", "kind": "income" }""")]
+    [InlineData("icon", """{ "name": "Salary", "icon": "", "kind": "income" }""")]
+    [InlineData("icon", """{ "name": "Salary", "icon": "ab", "kind": "income" }""")]
+    [InlineData("icon", """{ "name": "Salary", "icon": "a", "kind": "income" }""")]
+    [InlineData("icon", """{ "name": "Salary", "icon": "1", "kind": "income" }""")]
+    [InlineData("icon", """{ "name": "Salary", "icon": "🍔🍔", "kind": "income" }""")]
+    [InlineData("icon", """{ "name": "Salary", "icon": "🍔a", "kind": "income" }""")]
     [InlineData("icon", """{ "name": "Salary", "icon": "123456789012345678901234567890123456789012345678901", "kind": "income" }""")]
     public async Task InvalidField_Returns400NamingTheField_AndSavesNothing(string field, string body)
     {

@@ -68,7 +68,7 @@ Content-Type: application/json
   "amount": 30
 }
 
-### create a category (kind is required: income or expense)
+### create a category (kind is required: income or expense; icon must be a single emoji)
 POST http://localhost:5080/categories
 Authorization: Bearer <token>
 Content-Type: application/json

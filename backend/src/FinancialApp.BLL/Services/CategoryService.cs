@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using FinancialApp.BLL.Models;
 using FinancialApp.DAL.Repositories;
 using FinancialApp.DB.Entities;
@@ -91,9 +93,22 @@ public class CategoryService(ICategoryRepository categories) : ICategoryService
         }
 
         var icon = value.Trim();
-        if (icon.Length > MaxIconLength)
-            fail("icon", $"Icon can be at most {MaxIconLength} characters.");
+        if (icon.Length > MaxIconLength || !IsSingleEmoji(icon))
+            fail("icon", "Icon must be a single emoji.");
         return icon;
+    }
+
+    /// <summary>
+    /// Exactly one user-visible character (so flags, skin tones and family emoji count as one),
+    /// and that character is an emoji: a symbol like 🍔, or anything with the emoji presentation selector like ❤️ or 1️⃣.
+    /// </summary>
+    private static bool IsSingleEmoji(string value)
+    {
+        if (new StringInfo(value).LengthInTextElements != 1)
+            return false;
+
+        return Rune.GetUnicodeCategory(Rune.GetRuneAt(value, 0)) == UnicodeCategory.OtherSymbol
+               || value.Contains('\uFE0F');
     }
 
     private static string? ValidateName(string? value, Action<string, string> fail)
