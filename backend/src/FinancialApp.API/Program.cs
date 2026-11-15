@@ -49,8 +49,8 @@ var authDisabled = builder.Configuration.GetValue<bool>("Auth:Disabled");
 if (authDisabled)
 {
     builder.Services
-        .AddAuthentication(DevAuthHandler.Scheme)
-        .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.Scheme, null);
+        .AddAuthentication(DevAuthHandler.SchemeName)
+        .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.SchemeName, null);
 }
 
 else

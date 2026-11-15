@@ -12,7 +12,7 @@ public class DevAuthHandler(
     IConfiguration config)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    public const string Scheme = "DevAuth";
+    public const string SchemeName = "DevAuth";
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -23,7 +23,7 @@ public class DevAuthHandler(
             new Claim(ClaimTypes.NameIdentifier, id),
             new Claim(ClaimTypes.Name, "dev-user")
         };
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, Scheme));
-        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme)));
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, SchemeName));
+        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName)));
     }
 }
