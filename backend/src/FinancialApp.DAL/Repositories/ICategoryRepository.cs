@@ -4,7 +4,7 @@ namespace FinancialApp.DAL.Repositories;
 
 public interface ICategoryRepository
 {
-    /// <summary>Categories of one user, by kind then name. A null kind means all kinds.</summary>
+    /// <summary>Categories of one user, sorted by name (case-insensitive). A null kind means all kinds.</summary>
     Task<IReadOnlyList<Category>> GetByUserAsync(int userId, string? kind, CancellationToken ct = default);
 
     /// <summary>True if the user has a category of this kind with this name. Case-insensitive, like the database column.</summary>

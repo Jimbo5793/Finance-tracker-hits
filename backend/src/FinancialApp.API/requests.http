@@ -79,6 +79,13 @@ Content-Type: application/json
   "kind": "income"
 }
 
-### categories of one kind (no kind = all; any other kind = 400)
+### all categories of the logged-in user, sorted by name (empty list if none)
+GET http://localhost:5080/categories
+Authorization: Bearer <token>
+
+### categories of one kind (any other kind = 400)
 GET http://localhost:5080/categories?kind=income
 Authorization: Bearer <token>
+
+### categories without token (401)
+GET http://localhost:5080/categories

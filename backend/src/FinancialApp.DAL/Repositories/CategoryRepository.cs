@@ -11,8 +11,8 @@ public class CategoryRepository(AppDbContext db) : ICategoryRepository
     public async Task<IReadOnlyList<Category>> GetByUserAsync(int userId, string? kind, CancellationToken ct = default) =>
         await db.Categories.AsNoTracking()
             .Where(c => c.UserId == userId && (kind == null || c.Kind == kind))
-            .OrderBy(c => c.Kind)
-            .ThenBy(c => c.Name)
+            .OrderBy(c => c.Name) // citext, so "apple" comes before "Banana"
+            .ThenBy(c => c.Kind)  // the same name can exist once per kind
             .ToListAsync(ct);
 
     // name is citext, so this comparison is case-insensitive in the database

@@ -7,7 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinancialApp.API.Tests;
 
-/// <summary>POST and GET /categories — one test per check in T3FIN-89 (kind) and T3FIN-92 (validation), plus the audit log.</summary>
+/// <summary>
+/// POST and GET /categories — one test per check in T3FIN-89 (kind), T3FIN-92 (validation)
+/// and T3FIN-94 (the list), plus the audit log.
+/// </summary>
 [Collection(ApiCollection.Name)]
 public class CategoriesTests(ApiFactory api)
 {
@@ -151,6 +154,61 @@ public class CategoriesTests(ApiFactory api)
         Assert.All(expense, c => Assert.Equal("expense", c.Kind));
 
         Assert.Equal(5, (await GetAsync(userId, "")).Count);
+    }
+
+    [Fact]
+    public async Task NewUser_GetsEmptyList()
+    {
+        var userId = await api.CreateUserAsync();
+
+        var response = await api.ClientFor(userId.ToString()).GetAsync("/categories");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("[]", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Get_ReturnsAllCategories_SortedByName()
+    {
+        var userId = await api.CreateUserAsync();
+        await CreateAsync(userId, """{ "name": "Rent", "icon": "🏠", "kind": "expense" }""");
+        await CreateAsync(userId, """{ "name": "Bonus", "icon": "🎉", "kind": "income" }""");
+        await CreateAsync(userId, """{ "name": "Food", "icon": "🍔", "kind": "expense" }""");
+
+        var list = await GetAsync(userId, "");
+
+        // by name only, not grouped by kind
+        Assert.Equal(["Bonus", "Food", "Rent"], list.Select(c => c.Name));
+        Assert.Equal(["🎉", "🍔", "🏠"], list.Select(c => c.Icon));
+        Assert.Equal(["income", "expense", "expense"], list.Select(c => c.Kind));
+        Assert.All(list, c => Assert.True(c.Id > 0));
+    }
+
+    [Fact]
+    public async Task Get_SortsByNameIgnoringCase()
+    {
+        var userId = await api.CreateUserAsync();
+        await CreateAsync(userId, """{ "name": "banana", "icon": "🍌", "kind": "expense" }""");
+        await CreateAsync(userId, """{ "name": "Cherry", "icon": "🍒", "kind": "expense" }""");
+        await CreateAsync(userId, """{ "name": "apple", "icon": "🍎", "kind": "expense" }""");
+
+        var list = await GetAsync(userId, "");
+
+        Assert.Equal(["apple", "banana", "Cherry"], list.Select(c => c.Name));
+    }
+
+    [Fact]
+    public async Task Get_DoesNotReturnOtherUsersCategories_WithoutKind()
+    {
+        var first = await api.CreateUserAsync();
+        var second = await api.CreateUserAsync();
+        await CreateAsync(first, """{ "name": "Food", "icon": "🍔", "kind": "expense" }""");
+        await CreateAsync(first, """{ "name": "Salary", "icon": "💰", "kind": "income" }""");
+        await CreateAsync(second, """{ "name": "Rent", "icon": "🏠", "kind": "expense" }""");
+
+        var list = await GetAsync(second, "");
+
+        Assert.Equal(["Rent"], list.Select(c => c.Name));
     }
 
     [Fact]

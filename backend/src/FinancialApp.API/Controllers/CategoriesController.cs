@@ -14,8 +14,9 @@ namespace FinancialApp.API.Controllers;
 public class CategoriesController(ICategoryService service) : ControllerBase
 {
     /// <summary>
-    /// Categories of the logged-in user, by kind then name. ?kind=income or ?kind=expense returns only that kind;
-    /// no kind returns all. Any other kind is a 400 naming the kind field.
+    /// Categories of the logged-in user, sorted by name. Empty list if they have none.
+    /// ?kind=income or ?kind=expense returns only that kind; no kind returns all.
+    /// Any other kind is a 400 naming the kind field.
     /// </summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<CategoryDto>>(StatusCodes.Status200OK)]
