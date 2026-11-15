@@ -51,6 +51,7 @@ public class CategoryRepository(AppDbContext db) : ICategoryRepository
                 category.Name,
                 category.Icon,
                 category.Kind,
+                Mandatory = category.IsMandatory,
             }, JsonSerializerOptions.Web),
         });
         await db.SaveChangesAsync(ct);

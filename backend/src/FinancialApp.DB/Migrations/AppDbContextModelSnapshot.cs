@@ -151,6 +151,10 @@ namespace FinancialApp.DB.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("icon");
 
+                    b.Property<bool?>("IsMandatory")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_mandatory");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -179,6 +183,8 @@ namespace FinancialApp.DB.Migrations
                             t.HasCheckConstraint("ck_categories_id_range", "id BETWEEN 12000001 AND 12999999");
 
                             t.HasCheckConstraint("ck_categories_kind", "kind IN ('income', 'expense')");
+
+                            t.HasCheckConstraint("ck_categories_mandatory", "(kind = 'expense' AND is_mandatory IS NOT NULL) OR (kind = 'income' AND is_mandatory IS NULL)");
 
                             t.HasCheckConstraint("ck_categories_name_length", "char_length(name) BETWEEN 1 AND 30");
                         });

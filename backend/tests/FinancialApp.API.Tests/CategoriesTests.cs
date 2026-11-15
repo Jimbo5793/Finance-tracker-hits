@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FinancialApp.API.Tests;
 
 /// <summary>
-/// POST and GET /categories — one test per check in T3FIN-89 (kind), T3FIN-92 (validation)
-/// and T3FIN-94 (the list), plus the audit log.
+/// POST and GET /categories — one test per check in T3FIN-89 (kind), T3FIN-92 (validation),
+/// T3FIN-94 (the list) and T3FIN-116 (mandatory flag), plus the audit log.
 /// </summary>
 [Collection(ApiCollection.Name)]
 public class CategoriesTests(ApiFactory api)
@@ -113,6 +113,9 @@ public class CategoriesTests(ApiFactory api)
     [InlineData("icon", """{ "name": "Salary", "icon": "🍔🍔", "kind": "income" }""")]
     [InlineData("icon", """{ "name": "Salary", "icon": "🍔a", "kind": "income" }""")]
     [InlineData("icon", """{ "name": "Salary", "icon": "123456789012345678901234567890123456789012345678901", "kind": "income" }""")]
+    [InlineData("mandatory", """{ "name": "Salary", "icon": "💰", "kind": "income", "mandatory": true }""")]
+    [InlineData("mandatory", """{ "name": "Rent", "icon": "🏠", "kind": "expense", "mandatory": "yes" }""")]
+    [InlineData("mandatory", """{ "name": "Rent", "icon": "🏠", "kind": "expense", "mandatory": 1 }""")]
     public async Task InvalidField_Returns400NamingTheField_AndSavesNothing(string field, string body)
     {
         var userId = await api.CreateUserAsync();
@@ -123,6 +126,64 @@ public class CategoriesTests(ApiFactory api)
         Assert.Equal([field], await ErrorFieldsAsync(response));
         Assert.Equal(0, await CategoryCountAsync(userId));
         Assert.Equal(0, await api.QueryDbAsync(db => db.AuditLog.CountAsync(a => a.UserId == userId)));
+    }
+
+    [Fact]
+    public async Task ExpenseCategory_WithMandatoryTrue_IsCreatedAsMandatory()
+    {
+        var userId = await api.CreateUserAsync();
+
+        var category = await CreateAsync(userId, """{ "name": "Rent", "icon": "🏠", "kind": "expense", "mandatory": true }""");
+
+        Assert.Equal("Rent", category.Name);
+        Assert.True(category.Mandatory);
+        Assert.True(await api.QueryDbAsync(db => db.Categories.Where(c => c.Id == category.Id).Select(c => c.IsMandatory).SingleAsync()));
+    }
+
+    [Theory]
+    [InlineData("""{ "name": "Coffee", "icon": "☕", "kind": "expense" }""")]
+    [InlineData("""{ "name": "Coffee", "icon": "☕", "kind": "expense", "mandatory": null }""")]
+    [InlineData("""{ "name": "Coffee", "icon": "☕", "kind": "expense", "mandatory": false }""")]
+    public async Task ExpenseCategory_WithoutMandatory_IsCreatedAsNonMandatory(string body)
+    {
+        var userId = await api.CreateUserAsync();
+
+        var category = await CreateAsync(userId, body);
+
+        Assert.False(category.Mandatory);
+        Assert.False(await api.QueryDbAsync(db => db.Categories.Where(c => c.Id == category.Id).Select(c => c.IsMandatory).SingleAsync()));
+    }
+
+    [Theory]
+    [InlineData("""{ "name": "Salary", "icon": "💰", "kind": "income" }""")]
+    [InlineData("""{ "name": "Salary", "icon": "💰", "kind": "income", "mandatory": null }""")]
+    [InlineData("""{ "name": "Salary", "icon": "💰", "kind": "income", "mandatory": false }""")]
+    public async Task IncomeCategory_HasNoMandatoryFlag(string body)
+    {
+        var userId = await api.CreateUserAsync();
+
+        var category = await CreateAsync(userId, body);
+
+        Assert.Null(category.Mandatory);
+        Assert.Null(await api.QueryDbAsync(db => db.Categories.Where(c => c.Id == category.Id).Select(c => c.IsMandatory).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task Get_ShowsFlagOnExpenseCategories_AndNoneOnIncome()
+    {
+        var userId = await api.CreateUserAsync();
+        await CreateAsync(userId, """{ "name": "Rent", "icon": "🏠", "kind": "expense", "mandatory": true }""");
+        await CreateAsync(userId, """{ "name": "Coffee", "icon": "☕", "kind": "expense" }""");
+        await CreateAsync(userId, """{ "name": "Salary", "icon": "💰", "kind": "income" }""");
+
+        var response = await api.ClientFor(userId.ToString()).GetAsync("/categories");
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var flags = doc.RootElement.EnumerateArray()
+            .ToDictionary(c => c.GetProperty("name").GetString()!, c => c.GetProperty("mandatory").ValueKind);
+
+        Assert.Equal(JsonValueKind.False, flags["Coffee"]);
+        Assert.Equal(JsonValueKind.True, flags["Rent"]);
+        Assert.Equal(JsonValueKind.Null, flags["Salary"]);
     }
 
     [Fact]
@@ -263,6 +324,20 @@ public class CategoriesTests(ApiFactory api)
         Assert.Equal("Salary", data.RootElement.GetProperty("name").GetString());
         Assert.Equal("💰", data.RootElement.GetProperty("icon").GetString());
         Assert.Equal("income", data.RootElement.GetProperty("kind").GetString());
+        Assert.Equal(JsonValueKind.Null, data.RootElement.GetProperty("mandatory").ValueKind);
+    }
+
+    [Fact]
+    public async Task MandatoryFlag_IsWrittenToAuditLog()
+    {
+        var userId = await api.CreateUserAsync();
+
+        var category = await CreateAsync(userId, """{ "name": "Rent", "icon": "🏠", "kind": "expense", "mandatory": true }""");
+
+        var entry = await api.QueryDbAsync(db =>
+            db.AuditLog.SingleAsync(a => a.EntityType == "category" && a.EntityId == category.Id));
+        using var data = JsonDocument.Parse(entry.Data);
+        Assert.True(data.RootElement.GetProperty("mandatory").GetBoolean());
     }
 
     private Task<HttpResponseMessage> PostAsync(int userId, string json) =>
@@ -292,5 +367,5 @@ public class CategoriesTests(ApiFactory api)
     private Task<int> CategoryCountAsync(int userId) =>
         api.QueryDbAsync(db => db.Categories.CountAsync(c => c.UserId == userId));
 
-    private sealed record CategoryResponse(int Id, string Name, string Icon, string Kind);
+    private sealed record CategoryResponse(int Id, string Name, string Icon, string Kind, bool? Mandatory);
 }

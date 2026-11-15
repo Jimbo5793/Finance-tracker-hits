@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using FinancialApp.BLL.Models;
 using FinancialApp.DAL.Repositories;
 using FinancialApp.DB.Entities;
@@ -40,6 +41,7 @@ public class CategoryService(ICategoryRepository categories) : ICategoryService
         var kind = ValidateKind(request.Kind, Fail);
         var icon = ValidateIcon(request.Icon, Fail);
         var name = ValidateName(request.Name, Fail);
+        var mandatory = ValidateMandatory(request.Mandatory, kind, Fail);
 
         // Only check for a duplicate once name and kind are both valid; the same name is fine for another kind.
         if (name is not null && kind is not null && await categories.NameExistsAsync(userId, kind, name, ct))
@@ -54,6 +56,7 @@ public class CategoryService(ICategoryRepository categories) : ICategoryService
             Name = name!,
             Icon = icon!,
             Kind = kind!,
+            IsMandatory = mandatory,
         };
 
         try
@@ -82,6 +85,36 @@ public class CategoryService(ICategoryRepository categories) : ICategoryService
         if (kind is null)
             fail("kind", NotAllowedKindMessage(value));
         return kind;
+    }
+
+    /// <summary>
+    /// Expense categories: true or false, missing means false. Income categories have no flag:
+    /// missing, null or false is fine (stored as none), true is an error.
+    /// </summary>
+    private static bool? ValidateMandatory(JsonElement? value, string? kind, Action<string, string> fail)
+    {
+        bool? flag;
+        switch (value?.ValueKind)
+        {
+            case null or JsonValueKind.Undefined or JsonValueKind.Null:
+                flag = null;
+                break;
+            case JsonValueKind.True or JsonValueKind.False:
+                flag = value.Value.GetBoolean();
+                break;
+            default:
+                fail("mandatory", "Mandatory must be true or false.");
+                return null;
+        }
+
+        if (kind == CategoryKinds.Income)
+        {
+            if (flag == true)
+                fail("mandatory", "Only expense categories can be mandatory.");
+            return null;
+        }
+
+        return flag ?? false;
     }
 
     private static string? ValidateIcon(string? value, Action<string, string> fail)
@@ -143,7 +176,7 @@ public class CategoryService(ICategoryRepository categories) : ICategoryService
     private static string NameTakenMessage(string name, string kind) =>
         $"You already have an {kind} category called \"{name}\".";
 
-    private static CategoryDto ToDto(Category c) => new(c.Id, c.Name, c.Icon, c.Kind);
+    private static CategoryDto ToDto(Category c) => new(c.Id, c.Name, c.Icon, c.Kind, c.IsMandatory);
 
     private static CreateCategoryResult Invalid(Dictionary<string, List<string>> errors) =>
         CreateCategoryResult.Invalid(errors.ToDictionary(e => e.Key, e => e.Value.ToArray()));

@@ -106,6 +106,18 @@ Content-Type: application/json
   "kind": "income"
 }
 
+### create a mandatory expense category (mandatory: true/false, expense only, missing = false)
+POST http://localhost:5080/categories
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Rent",
+  "icon": "🏠",
+  "kind": "expense",
+  "mandatory": true
+}
+
 ### all categories of the logged-in user, sorted by name (empty list if none)
 GET http://localhost:5080/categories
 Authorization: Bearer <token>
