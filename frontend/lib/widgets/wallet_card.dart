@@ -13,11 +13,14 @@ class WalletCard extends StatelessWidget {
   final double? width;
   final bool highlighted;
 
+  final VoidCallback? onTap;
+
   const WalletCard({
     super.key,
     required this.wallet,
     this.width,
     this.highlighted = false,
+    this.onTap,
   });
 
   static final _money = NumberFormat('#,##0.00', 'en_US');
@@ -59,7 +62,7 @@ class WalletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       width: width ?? walletCardWidth,
       height: walletCardHeight,
       padding: const EdgeInsets.all(24),
@@ -171,6 +174,12 @@ class WalletCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+
+    if (onTap == null) return card;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(onTap: onTap, child: card),
     );
   }
 }

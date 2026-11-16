@@ -9,6 +9,10 @@ class AppStrings {
   static const userName = 'John Doe';
   static const userSubtitle = 'Personal Finance Tracker';
   static const userInitials = 'JD';
+  static const walletNotFound = 'Wallet not found.';
+  static const walletNotFoundMessage =
+      'It may have been removed, or it is not yours.';
+  static const backToWallets = 'Back to wallets';
 
   // Wallets screen
   static const walletsTitle = 'Wallets';
@@ -80,4 +84,66 @@ class AppStrings {
   static const footerSaving = 'Please wait. Saving your wallet.';
 
   static String walletCreated(String name) => '$name was created successfully.';
+
+  // Record expense
+  static const recordExpense = 'Record expense';
+  static const recordExpenseSubtitle =
+      'Money you spent from one of your wallets.';
+  static const fieldWallet = 'Wallet';
+  static const fieldAmount = 'Amount';
+  static const fieldDate = 'Date';
+  static const fieldCategory = 'Category (optional)';
+  static const fieldComment = 'Comment (optional)';
+  static const hintWallet = 'Select wallet';
+  static const hintAmount = 'Enter amount';
+  static const hintComment = 'Add a note';
+  static const noCategory = 'No category';
+  static const helperAmount =
+      'How much you spent. More than 0, up to 2 decimal places.';
+  static const helperDate = 'Only days of the current month can be picked.';
+  static const categoriesFailed =
+      'Could not load categories. You can still save without one.';
+  static const errorWalletRequired = 'Choose a wallet.';
+  static const errorAmountRequired = 'Enter an amount.';
+  static const errorAmountInvalid =
+      'Enter a number greater than 0, with up to 2 decimal places.';
+  static const noWalletsForExpense =
+      'Create a wallet first, then you can record an expense in it.';
+  static String expenseRecorded(String amount, String wallet) =>
+      'Expense of $amount recorded in $wallet.';
+
+  // Top bar
+  static const logOut = 'Log out';
+
+  // Wallet details
+  static const currentBalance = 'Current balance';
+  static const thisMonth = 'THIS MONTH';
+  static const income = 'Income';
+  static const expenses = 'Expenses';
+  static const operationIncome = 'Income';
+  static const operationExpense = 'Expense';
+  static const addIncome = 'Add Income';
+  static const addExpense = 'Add Expense';
+  static const addCategory = 'Add Category';
+
+  // Transactions
+  static const transactions = 'Transactions';
+  static String transactionsSubtitle(String month, int count) =>
+      '$month · $count ${count == 1 ? 'transaction' : 'transactions'}';
+  static const searchHint = 'Search';
+  static const filterAll = 'All';
+  static const colDescription = 'DESCRIPTION';
+  static const colCategory = 'CATEGORY';
+  static const colDate = 'DATE';
+  static const colAmount = 'AMOUNT';
+  static const transactionsLoading = 'Loading transactions...';
+  static const transactionsEmpty = 'No transactions yet.';
+  static const transactionsNoMatch = 'No transactions match your search.';
+  static const transactionsError = 'Could not load transactions.';
+
+  // Temporary, until those tasks are built
+  static const recordFormComingSoon = 'The record form is the next task.';
+  static const categoryFormComingSoon =
+      'The category form comes in a later task.';
+  static const logOutComingSoon = 'Log out comes with the login screen.';
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../core/colors.dart';
 
@@ -237,5 +238,65 @@ class AppDropdownField<T> extends StatelessWidget {
       );
     }
     return field;
+  }
+}
+
+/// Looks like a text field, opens a date picker when tapped.
+class AppDateField extends StatelessWidget {
+  final DateTime value;
+  final bool hasError;
+  final VoidCallback? onTap;
+
+  const AppDateField({
+    super.key,
+    required this.value,
+    this.hasError = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: onTap == null
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          height: _fieldHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: hasError ? AppColors.errorBorder : AppColors.fieldBorder,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  DateFormat('d MMM yyyy').format(value),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (hasError) ...const [
+                Icon(Icons.error_outline, size: 18, color: AppColors.errorText),
+                SizedBox(width: 10),
+              ],
+              const Icon(
+                Icons.calendar_today_outlined,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

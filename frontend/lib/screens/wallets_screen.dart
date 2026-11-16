@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/colors.dart';
 import '../core/strings.dart';
@@ -11,13 +12,25 @@ import '../widgets/primary_button.dart';
 import '../widgets/state_panel.dart';
 import '../widgets/wallet_card.dart';
 import '../widgets/wallet_card_skeleton.dart';
+import '../data/category_repository.dart';
+import '../data/operation_repository.dart';
+import '../widgets/secondary_button.dart';
+import 'record_expense_dialog.dart';
 import 'create_wallet_dialog.dart';
 
 enum _LoadState { loading, error, empty, loaded }
 
 class WalletsScreen extends StatefulWidget {
   final WalletRepository repository;
-  const WalletsScreen({super.key, required this.repository});
+  final OperationRepository operationRepository;
+  final CategoryRepository categoryRepository;
+
+  const WalletsScreen({
+    super.key,
+    required this.repository,
+    required this.operationRepository,
+    required this.categoryRepository,
+  });
 
   @override
   State<WalletsScreen> createState() => _WalletsScreenState();
@@ -61,6 +74,18 @@ class _WalletsScreenState extends State<WalletsScreen> {
     }
   }
 
+  Future<void> _recordExpense() async {
+    final recorded = await showRecordExpenseDialog(
+      context,
+      wallets: widget.repository,
+      categories: widget.categoryRepository,
+      operations: widget.operationRepository,
+      onAddWallet: _openCreateForm, // shown to a user with no wallets
+    );
+    // Balances changed, so reload the cards.
+    if (recorded != null && mounted) _load();
+  }
+
   Future<void> _openCreateForm() async {
     final created = await showDialog<Wallet>(
       context: context,
@@ -90,11 +115,15 @@ class _WalletsScreenState extends State<WalletsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppShell(
+    return PageBody(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Header(onAddWallet: _openCreateForm),
+          const SizedBox(height: 16),
+          _Header(
+            onAddWallet: _openCreateForm,
+            onRecordExpense: _recordExpense,
+          ),
           const SizedBox(height: 32),
           _body(),
         ],
@@ -174,6 +203,7 @@ class _WalletGrid extends StatelessWidget {
                 wallet: w,
                 width: cardWidth,
                 highlighted: w.id == highlightId,
+                onTap: () => context.go('/wallets/${w.id}', extra: w),
               ),
           ],
         );
@@ -220,7 +250,8 @@ class _SuccessBanner extends StatelessWidget {
 
 class _Header extends StatelessWidget {
   final VoidCallback onAddWallet;
-  const _Header({required this.onAddWallet});
+  final VoidCallback onRecordExpense;
+  const _Header({required this.onAddWallet, required this.onRecordExpense});
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +278,14 @@ class _Header extends StatelessWidget {
             ],
           ),
         ),
-        // Always on screen, including while loading and on error.
+        // Both are always on screen, including while loading and on error.
+        SecondaryButton(
+          label: AppStrings.recordExpense,
+          icon: Icons.remove,
+          iconColor: AppColors.expense,
+          onPressed: onRecordExpense,
+        ),
+        const SizedBox(width: 12),
         PrimaryButton(
           label: AppStrings.addWallet,
           icon: Icons.add,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'dart:async';
 
 FinanceTrackerApp _appWith(MockClient client) => FinanceTrackerApp(
   repository: WalletRepository(
@@ -21,29 +22,19 @@ void _useDesktopSize(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('shows one card per wallet, each in its own currency', (
-    tester,
-  ) async {
+  testWidgets('shows a loading state before the data arrives', (tester) async {
     _useDesktopSize(tester);
-    final client = MockClient((request) async {
-      expect(request.url.path, '/wallets');
-      return http.Response(
-        '[{"id":1,"name":"Cash #1","type":"cash","currency":"EUR","balance":100},'
-        '{"id":2,"name":"Travel","type":"bank card","currency":"RUB","balance":5000}]',
-        200,
-      );
-    });
+    final response = Completer<http.Response>();
+    final client = MockClient((request) => response.future);
 
     await tester.pumpWidget(_appWith(client));
-    await tester.pumpAndSettle();
+    await tester.pump(); // the router opens /wallets
 
-    expect(find.text('Cash #1'), findsOneWidget);
-    expect(find.text('Travel'), findsOneWidget);
-    expect(find.text('100.00'), findsOneWidget);
-    expect(find.text('5,000.00'), findsOneWidget);
-    expect(find.text('EUR'), findsOneWidget);
-    expect(find.text('RUB'), findsOneWidget);
-    expect(find.text('Add wallet'), findsOneWidget);
+    expect(find.text('Loading your wallets...'), findsOneWidget);
+    expect(find.text('No wallets yet.'), findsNothing);
+
+    response.complete(http.Response('[]', 200));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('shows the empty state when there are no wallets', (

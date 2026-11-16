@@ -47,6 +47,19 @@ class AppColors {
   static const buttonDisabled = Color(0xFFE1E9E3);
   static const buttonDisabledText = Color(0xFF6B7B74);
 
+  // Money
+  static const income = Color(0xFF2E7D4F);
+  static const expense = Color(0xFFC0392B);
+  static const incomeTile = Color(0xFFE3F1E8);
+  static const expenseTile = Color(0xFFFCE8E6);
+
+  // Wallet details
+  static const summaryTile = Color(0xFFF8F9F5);
+  static const searchFill = Color(0xFFF1F3EF);
+  static const segmentedBackground = Color(0xFFEEF0EB);
+  static const chipBackground = Color(0xFFEFF2EE);
+  static const highlight = Color(0xFFFFF200);
+
   // Form errors
   static const errorText = Color(0xFFB42318);
   static const errorBorder = Color(0xFFE5736C);
