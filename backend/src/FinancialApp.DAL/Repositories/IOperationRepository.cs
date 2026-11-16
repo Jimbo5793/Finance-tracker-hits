@@ -11,4 +11,6 @@ public interface IOperationRepository
     /// either both are saved or neither.
     /// </summary>
     Task CreateWithAuditAsync(Operation operation, int userId, CancellationToken ct = default);
+    Task<IReadOnlyList<Operation>> GetForUserAsync(
+        int userId, int? walletId, string? type, int limit, int offset, CancellationToken ct = default);
 }

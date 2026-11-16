@@ -53,4 +53,20 @@ public class OperationRepository(AppDbContext db) : IOperationRepository
 
         await tx.CommitAsync(ct);
     }
+    
+    public async Task<IReadOnlyList<Operation>> GetForUserAsync(
+        int userId, int? walletId, string? type, int limit, int offset, CancellationToken ct = default)
+    {
+        var query = db.Operations.AsNoTracking().Where(o => o.Wallet!.UserId == userId);
+
+        if (walletId is not null) query = query.Where(o => o.WalletId == walletId.Value);
+        if (type is not null) query = query.Where(o => o.Type == type);
+
+        return await query
+            .OrderByDescending(o => o.OccurredAt)
+            .ThenByDescending(o => o.Id)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(ct);
+    }
 }

@@ -211,4 +211,58 @@ public class OperationService(
 
         return tax;
     }
+        public const int DefaultLimit = 100;
+    public const int MaxLimit = 500;
+
+    public async Task<GetOperationsResult> GetAsync(
+        int userId, string? walletId, string? type, string? limit, string? offset, CancellationToken ct = default)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        int? walletIdValue = null;
+        if (!string.IsNullOrWhiteSpace(walletId))
+        {
+            if (TryParseWhole(walletId, out var parsedWalletId)) walletIdValue = parsedWalletId;
+            else errors["walletId"] = ["Wallet id must be a whole number."];
+        }
+
+        string? typeValue = null;
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            typeValue = OperationTypes.All.FirstOrDefault(t =>
+                string.Equals(t, type.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (typeValue is null)
+                errors["type"] = [$"\"{type}\" is not an allowed type. Allowed types: {string.Join(", ", OperationTypes.All)}."];
+        }
+
+        var limitValue = DefaultLimit;
+        if (!string.IsNullOrWhiteSpace(limit))
+        {
+            if (TryParseWhole(limit, out var parsedLimit) && parsedLimit is >= 1 and <= MaxLimit) limitValue = parsedLimit;
+            else errors["limit"] = [$"Limit must be a whole number from 1 to {MaxLimit}."];
+        }
+
+        var offsetValue = 0;
+        if (!string.IsNullOrWhiteSpace(offset))
+        {
+            if (TryParseWhole(offset, out var parsedOffset)) offsetValue = parsedOffset;
+            else errors["offset"] = ["Offset must be a whole number, 0 or more."];
+        }
+
+        if (errors.Count > 0)
+            return GetOperationsResult.Invalid(errors);
+
+        if (walletIdValue is not null && !await wallets.ExistsForUserAsync(walletIdValue.Value, userId, ct))
+            return GetOperationsResult.WalletNotFound();
+
+        var list = await operations.GetForUserAsync(userId, walletIdValue, typeValue, limitValue, offsetValue, ct);
+        return GetOperationsResult.Found(list.Select(ToDto).ToList());
+    }
+
+    private static bool TryParseWhole(string value, out int result) =>
+        int.TryParse(value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out result);
+
+    private static OperationDto ToDto(Operation o) => new(
+        o.Id, o.WalletId, o.Type, o.Amount, DateOnly.FromDateTime(o.OccurredAt),
+        o.CategoryId, o.Comment, o.TaxAmount);
 }
