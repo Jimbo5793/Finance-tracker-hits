@@ -3,9 +3,16 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/category.dart';
+import 'api_errors.dart';
 
 class CategoryLoadException implements Exception {
   const CategoryLoadException();
+}
+
+class CreateCategoryException implements Exception {
+  /// Field errors from the backend, keys lower-cased ('name', 'icon', ...).
+  final Map<String, List<String>> fieldErrors;
+  const CreateCategoryException([this.fieldErrors = const {}]);
 }
 
 class CategoryRepository {
@@ -49,5 +56,50 @@ class CategoryRepository {
     } catch (_) {
       throw const CategoryLoadException();
     }
+  }
+
+  /// POST /categories. kind is "expense" or "income".
+  Future<Category> createCategory({
+    required String name,
+    required String icon,
+    String kind = 'expense',
+    bool? mandatory, // only for expense categories; leave null for income
+  }) async {
+    final http.Response response;
+    try {
+      final token = await tokenProvider();
+      response = await _client
+          .post(
+            Uri.parse('$baseUrl/categories'),
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              if (token != null) 'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'name': name,
+              'icon': icon,
+              'kind': kind,
+              if (mandatory != null) 'mandatory': mandatory,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      throw const CreateCategoryException();
+    }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      try {
+        return Category.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,
+        );
+      } catch (_) {
+        throw const CreateCategoryException();
+      }
+    }
+    if (response.statusCode == 400) {
+      throw CreateCategoryException(parseFieldErrors(response.body));
+    }
+    throw const CreateCategoryException();
   }
 }

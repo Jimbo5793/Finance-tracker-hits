@@ -80,7 +80,7 @@ class AppStrings {
   static const save = 'Save';
   static const saving = 'Saving...';
   static const tryAgain = 'Try again';
-  static const footerIdle = 'You can review before saving.';
+  static const footerIdle = '';
   static const footerSaving = 'Please wait. Saving your wallet.';
 
   static String walletCreated(String name) => '$name was created successfully.';
@@ -115,6 +115,29 @@ class AppStrings {
   // Top bar
   static const logOut = 'Log out';
 
+  // Create category form
+  static const createCategoryTitle = 'Add Category';
+  static const createCategorySubtitle =
+      'Group your transactions under a name and an icon.';
+  static const fieldCategoryName = 'Name';
+  static const hintCategoryName = 'e.g. Food';
+  static const fieldCategoryIcon = 'Icon';
+  static const fieldCategoryKind = 'Type';
+  static const kindExpense = 'Expense';
+  static const kindIncome = 'Income';
+  static const errorCategoryNameEmpty = 'Enter a category name.';
+  static const errorCategoryNameTooLong = 'Use 30 characters or fewer.';
+  static const errorCategoryNameTaken = 'This name is already used.';
+  static const errorCategoryIconEmpty = 'Pick an icon.';
+  static const iconSelect = 'Select icon';
+  static const iconSelected = 'Selected icon';
+  static const markExpenseMandatory = 'Mark Expense as mandatory';
+
+  // Used by the categories list in the next task
+  static const mandatoryLabel = 'Mandatory';
+  static const nonMandatoryLabel = 'Non-mandatory';
+  static String categoryCreated(String name) => 'Category "$name" added.';
+
   // Wallet details
   static const currentBalance = 'Current balance';
   static const thisMonth = 'THIS MONTH';
@@ -143,7 +166,5 @@ class AppStrings {
 
   // Temporary, until those tasks are built
   static const recordFormComingSoon = 'The record form is the next task.';
-  static const categoryFormComingSoon =
-      'The category form comes in a later task.';
   static const logOutComingSoon = 'Log out comes with the login screen.';
 }

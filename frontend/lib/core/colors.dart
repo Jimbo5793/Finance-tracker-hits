@@ -31,6 +31,11 @@ class AppColors {
   static const iconTile = Color(0xFFE6F0EA);
   static const iconTileIcon = Color(0xFF1B3D32);
 
+  // Emojis
+  static const emojiSelectedBackground = Color(0xFFE6F0EA);
+  static const emojiPanelBackground = Color(0xFFF1F4EF);
+  static const emojiGridBackground = Color(0xFFE6EEE8);
+
   // Error state
   static const errorTile = Color(0xFFFDECEA);
   static const errorIcon = Color(0xFFD64545);

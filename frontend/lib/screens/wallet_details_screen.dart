@@ -13,7 +13,9 @@ import '../widgets/app_shell.dart';
 import '../widgets/state_panel.dart';
 import '../widgets/transactions_panel.dart';
 import '../widgets/wallet_summary_card.dart';
+import '../widgets/success_snack_bar.dart';
 import 'record_expense_dialog.dart';
+import 'create_category_dialog.dart';
 
 enum _WalletStatus { loading, ready, error, notFound }
 
@@ -106,6 +108,18 @@ class _WalletDetailsScreenState extends State<WalletDetailsScreen> {
     _loadTransactions();
   }
 
+  Future<void> _addCategory() async {
+    final created = await showCreateCategoryDialog(
+      context,
+      repository: widget.categoryRepository,
+    );
+    if (created == true) {
+      if (!mounted) return;
+      showSuccessSnackBar(context, 'Category added.');
+      _loadTransactions();
+    }
+  }
+
   void _retryWallet() {
     setState(() => _walletStatus = _WalletStatus.loading);
     _loadWallet();
@@ -169,7 +183,7 @@ class _WalletDetailsScreenState extends State<WalletDetailsScreen> {
             monthExpenses: _total(income: false),
             onAddIncome: () => _comingSoon(AppStrings.recordFormComingSoon),
             onAddExpense: _recordExpense,
-            onAddCategory: () => _comingSoon(AppStrings.categoryFormComingSoon),
+            onAddCategory: _addCategory,
           ),
           const SizedBox(height: 24),
           TransactionsPanel(

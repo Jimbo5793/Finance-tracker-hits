@@ -1,0 +1,4 @@
+These emoji images come from Noto Emoji by Google (https://github.com/googlefonts/noto-emoji),
+taken from the emoji-datasource-google npm package (v16.0.0, Noto Emoji v2.048).
+Noto Emoji images are licensed under the Apache License 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
