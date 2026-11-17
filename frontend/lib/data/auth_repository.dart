@@ -70,6 +70,25 @@ class AuthRepository {
       throw const LoginException(LoginFailure.unavailable);
     }
   }
+  
+  /// POST /auth/logout with the token that is being given up. Best effort: the
+  /// caller has already signed out locally, so no connection, or a token the
+  /// backend no longer knows, changes nothing for the user.
+  Future<void> logout(String token) async {
+    try {
+      await _client
+          .post(
+            Uri.parse('$baseUrl/auth/logout'),
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(_timeout);
+    } catch (_) {
+      // Ignored on purpose, see above.
+    }
+  }
 
   /// The backend sends UTC. If the "Z" is missing, it is still read as UTC.
   static DateTime _parseUtc(String value) {

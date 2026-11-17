@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'core/strings.dart';
 import 'data/auth_repository.dart';
 import 'data/auth_session.dart';
 import 'data/category_repository.dart';
@@ -44,10 +44,15 @@ GoRouter buildRouter({
         builder: (context, state, child) => AppShell(
           location: state.uri.path,
           controller: shell,
-          // TODO(logout task): call POST /auth/logout, then session.signOut().
-          onLogOut: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(AppStrings.logOutComingSoon)),
-          ),
+          onLogOut: () async {
+            final token = session.token;
+            // First, locally: the token leaves the storage and the redirect
+            // above opens /login right away, even if the backend is down.
+            await session.signOut();
+            // Then tell the backend so the token stops working. Best effort,
+            // and nobody waits for it.
+            if (token != null) unawaited(auth.logout(token));
+          },
           child: child,
         ),
         routes: [
