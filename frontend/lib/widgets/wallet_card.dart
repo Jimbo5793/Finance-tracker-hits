@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../core/colors.dart';
 import '../core/strings.dart';
 import '../models/wallet.dart';
+import '../utils/money.dart';
 
 const double walletCardWidth = 372;
 const double walletCardHeight = 246;
@@ -22,8 +22,6 @@ class WalletCard extends StatelessWidget {
     this.highlighted = false,
     this.onTap,
   });
-
-  static final _money = NumberFormat('#,##0.00', 'en_US');
 
   static String typeLabel(String type) {
     switch (type.toLowerCase()) {
@@ -131,13 +129,15 @@ class WalletCard extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  _money.format(wallet.balance),
+                  formatBalance(wallet.balance),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: wallet.balance < 0
+                        ? AppColors.expense
+                        : AppColors.textPrimary,
                   ),
                 ),
               ),

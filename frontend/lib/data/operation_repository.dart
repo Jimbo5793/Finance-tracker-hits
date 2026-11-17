@@ -30,14 +30,6 @@ class OperationRepository {
 
   static const _timeout = Duration(seconds: 10);
 
-  /// TO DO:
-  /// The backend has no way to list operations yet (OperationsController only has POST).
-  /// While this is false the list is simply empty. When the endpoint exists:
-  ///   1. set this to true,
-  ///   2. fix the URL / query parameters in [getOperations] to match it,
-  ///   3. check the JSON still matches [Operation.fromJson].
-  static const bool listEndpointReady = false;
-
   Future<Map<String, String>> _headers() async {
     final token = await tokenProvider();
     return {
@@ -46,13 +38,12 @@ class OperationRepository {
     };
   }
 
+  /// GET /operations?walletId=...&limit=500 (500 is the backend maximum, the default is 100).
   Future<List<Operation>> getOperations(int walletId) async {
-    if (!listEndpointReady) return const [];
-
     try {
-      final uri = Uri.parse(
-        '$baseUrl/operations',
-      ).replace(queryParameters: {'walletId': '$walletId'}); // assumed
+      final uri = Uri.parse('$baseUrl/operations').replace(
+        queryParameters: {'walletId': '$walletId', 'limit': '500'},
+      );
       final response = await _client
           .get(uri, headers: await _headers())
           .timeout(_timeout);
