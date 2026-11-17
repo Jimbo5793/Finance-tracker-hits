@@ -71,6 +71,7 @@ class AppTextField extends StatelessWidget {
   final String hint;
   final bool hasError;
   final bool enabled;
+  final bool obscureText;
 
   /// Small grey text on the right side, e.g. the currency code.
   final String? suffixText;
@@ -84,6 +85,7 @@ class AppTextField extends StatelessWidget {
     required this.hint,
     this.hasError = false,
     this.enabled = true,
+    this.obscureText = false,
     this.suffixText,
     this.keyboardType,
     this.onChanged,
@@ -116,6 +118,7 @@ class AppTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         enabled: enabled,
+        obscureText: obscureText,
         keyboardType: keyboardType,
         onChanged: onChanged,
         onSubmitted: onSubmitted,

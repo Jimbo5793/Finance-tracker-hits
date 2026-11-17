@@ -1,4 +1,5 @@
 import 'package:finance_tracker/data/wallet_repository.dart';
+import 'package:finance_tracker/data/auth_session.dart';
 import 'package:finance_tracker/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:http/testing.dart';
 import 'dart:async';
 
 FinanceTrackerApp _appWith(MockClient client) => FinanceTrackerApp(
+  session: AuthSession(token: 't', expiresAt: DateTime.utc(2999)),
   repository: WalletRepository(
     baseUrl: 'http://test',
     tokenProvider: () async => null,

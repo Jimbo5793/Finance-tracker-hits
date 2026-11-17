@@ -167,4 +167,20 @@ class AppStrings {
   // Temporary, until those tasks are built
   static const recordFormComingSoon = 'The record form is the next task.';
   static const logOutComingSoon = 'Log out comes with the login screen.';
+
+    // Login
+  static const loginTitle = 'Welcome back';
+  static const fieldEmail = 'Email';
+  static const fieldPassword = 'Password';
+  static const hintEmail = 'you@example.com';
+  static const hintPassword = 'Enter your password';
+  static const logIn = 'Log in';
+  static const loggingIn = 'Logging in...';
+  static const noAccount = "Don't have an account?";
+  static const register = 'Register';
+  static const registerComingSoon = 'Registration is not available yet.';
+  static const errorEmailRequired = 'Enter your email.';
+  static const errorPasswordRequired = 'Enter your password.';
+  static const loginWrongCredentials = 'Incorrect email or password.';
+  static const loginUnavailable = 'Could not reach the server. Please try again.';
 }
