@@ -112,6 +112,15 @@ class AppStrings {
   static String expenseRecorded(String amount, String wallet) =>
       'Expense of $amount recorded in $wallet.';
 
+  // Record Income
+  static const recordIncome = 'Add Income';
+  static const recordIncomeSubtitle = "Record latest income you've got";
+  static const helperAmountIncome =
+      'How much you received. More than 0, up to 2 decimal places.';
+  static const noWalletsForIncome =
+      'Create a wallet first, then you can add income to it.';
+  static const incomeCreated = 'New Income was created successfully.';
+
   // Top bar
   static const logOut = 'Log out';
 

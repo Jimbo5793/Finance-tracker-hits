@@ -14,6 +14,7 @@ import '../widgets/state_panel.dart';
 import '../widgets/transactions_panel.dart';
 import '../widgets/wallet_summary_card.dart';
 import '../widgets/success_snack_bar.dart';
+import 'record_income_dialog.dart';
 import 'record_expense_dialog.dart';
 import 'create_category_dialog.dart';
 
@@ -94,13 +95,31 @@ class _WalletDetailsScreenState extends State<WalletDetailsScreen> {
   }
 
   Future<void> _recordExpense() async {
+    final wallet = _wallet;
+    if (wallet == null) return;
     final recorded = await showRecordExpenseDialog(
       context,
       wallets: widget.walletRepository,
       categories: widget.categoryRepository,
       operations: widget.operationRepository,
-      initialWallet: _wallet,
-      onAddWallet: () => context.go('/wallets'),
+      initialWallet: wallet,
+      chooseWallet: false,
+    );
+    if (recorded == null || !mounted) return;
+    // The balance and this month's totals changed.
+    _loadWallet();
+    _loadTransactions();
+  }
+    Future<void> _recordIncome() async {
+    final wallet = _wallet;
+    if (wallet == null) return;
+    final recorded = await showRecordIncomeDialog(
+      context,
+      wallets: widget.walletRepository,
+      categories: widget.categoryRepository,
+      operations: widget.operationRepository,
+      initialWallet: wallet,
+      chooseWallet: false,
     );
     if (recorded == null || !mounted) return;
     // The balance and this month's totals changed.
@@ -162,12 +181,6 @@ class _WalletDetailsScreenState extends State<WalletDetailsScreen> {
       .where((o) => o.isIncome == income)
       .fold(0.0, (sum, o) => sum + o.amount);
 
-  void _comingSoon(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
   @override
   Widget build(BuildContext context) {
     final wallet = _wallet;
@@ -181,7 +194,7 @@ class _WalletDetailsScreenState extends State<WalletDetailsScreen> {
             wallet: wallet,
             monthIncome: _total(income: true),
             monthExpenses: _total(income: false),
-            onAddIncome: () => _comingSoon(AppStrings.recordFormComingSoon),
+            onAddIncome: _recordIncome,
             onAddExpense: _recordExpense,
             onAddCategory: _addCategory,
           ),

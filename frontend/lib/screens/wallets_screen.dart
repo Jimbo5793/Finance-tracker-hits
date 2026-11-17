@@ -16,6 +16,7 @@ import '../data/category_repository.dart';
 import '../data/operation_repository.dart';
 import '../widgets/secondary_button.dart';
 import 'record_expense_dialog.dart';
+import 'record_income_dialog.dart';
 import 'create_wallet_dialog.dart';
 
 enum _LoadState { loading, error, empty, loaded }
@@ -85,6 +86,18 @@ class _WalletsScreenState extends State<WalletsScreen> {
     // Balances changed, so reload the cards.
     if (recorded != null && mounted) _load();
   }
+  
+  Future<void> _recordIncome() async {
+    final recorded = await showRecordIncomeDialog(
+      context,
+      wallets: widget.repository,
+      categories: widget.categoryRepository,
+      operations: widget.operationRepository,
+      onAddWallet: _openCreateForm, // shown to a user with no wallets
+    );
+    // Balances changed, so reload the cards.
+    if (recorded != null && mounted) _load();
+  }
 
   Future<void> _openCreateForm() async {
     final created = await showDialog<Wallet>(
@@ -123,6 +136,7 @@ class _WalletsScreenState extends State<WalletsScreen> {
           _Header(
             onAddWallet: _openCreateForm,
             onRecordExpense: _recordExpense,
+            onRecordIncome: _recordIncome,
           ),
           const SizedBox(height: 32),
           _body(),
@@ -251,7 +265,12 @@ class _SuccessBanner extends StatelessWidget {
 class _Header extends StatelessWidget {
   final VoidCallback onAddWallet;
   final VoidCallback onRecordExpense;
-  const _Header({required this.onAddWallet, required this.onRecordExpense});
+  final VoidCallback onRecordIncome;
+  const _Header({
+    required this.onAddWallet, 
+    required this.onRecordExpense,
+    required this.onRecordIncome,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -280,7 +299,14 @@ class _Header extends StatelessWidget {
         ),
         // Both are always on screen, including while loading and on error.
         SecondaryButton(
-          label: AppStrings.recordExpense,
+          label: AppStrings.addIncome,
+          icon: Icons.add,
+          iconColor: AppColors.income,
+          onPressed: onRecordIncome,
+        ),
+        const SizedBox(width: 12), 
+        SecondaryButton(
+          label: AppStrings.addExpense,
           icon: Icons.remove,
           iconColor: AppColors.expense,
           onPressed: onRecordExpense,
